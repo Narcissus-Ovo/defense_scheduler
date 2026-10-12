@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-12",
+  "timezone": "Asia/Shanghai",
+  "environment": {
+    "date": "2026-10-12",
+    "commit": "43afaf97b0a85975c97e4e7b3d9cfb9e9128b4d0",
+    "python": "3.12.14",
+    "node": "v24.13.1",
+    "business_db_sha256_before": "a1449b778b475964c08efecc2a1ffad8530a9be078465ef94f760a13fee102f2",
+    "branch_at_start": "main",
+    "branch": "feat/testing",
+    "branch_note": "Checks started on main before ref permission was granted; feat/testing points to the same tested commit, no tracked source changed."
+  },
+  "business_db_sha256_after": "c881a0f31a32b3b88148740208842c45f3caad8be2142866ecff84216542bc7a",
+  "whole_session_business_db_unchanged": false,
+  "business_db_observation": "Whole-session file hash changed. Live development server logged POST /api/auth/logout/ at 19:35:01, after baseline regression ended 19:33:48; current business entity tables remain empty. Do not claim whole-session hash equality.",
+  "scoped_runner_report": {
+    "date": "2026-10-12T19:46:05.569818+08:00",
+    "branch": "feat/testing",
+    "commit": "43afaf97b0a85975c97e4e7b3d9cfb9e9128b4d0",
+    "python": "3.12.14",
+    "node": "v24.13.1",
+    "checks": [
+      {
+        "check": "probes",
+        "command": [
+          "scripts/qa/probe-baseline.py"
+        ],
+        "returncode": 0,
+        "seconds": 6.812
+      },
+      {
+        "check": "quality",
+        "command": [
+          "scripts/qa/probe-quality.cjs"
+        ],
+        "returncode": 0,
+        "seconds": 0.313
+      }
+    ],
+    "business_database_unchanged": true,
+    "note": "Probe exit 0 means observations were collected; inspect meets_new_expectation, not a requirement pass."
+  },
+  "backend": {
+    "discovered": 243,
+    "passed": 241,
+    "skipped": 2,
+    "seconds": 42.953,
+    "skip_reason": "api/tests.py: real defense documents directory unavailable"
+  },
+  "checks": {
+    "django-check": "passed",
+    "migration-consistency": "passed",
+    "frontend-lint": "passed",
+    "frontend-domain": "passed",
+    "frontend-types-build": "passed"
+  },
+  "raw_log_hashes": {
+    "backend-tests.log": "4da708715a5d99adb9d2924b5a56a12576db4eceeaebd237132205d932fec7bf",
+    "django-check.log": "569740892270a412c02f5021e0703ecaafdc8a409e03320c9bdac90bb6558f0b",
+    "frontend-build.log": "f0ff8d430e46451dbcc041529253063cdffd83d0b9dc49ceeaec2c9df1540bbe",
+    "frontend-domain.log": "5604a925fd86d4cf05e0709c5f33599d8821d30145ba9260bc80f66cd515b8c0",
+    "frontend-lint.log": "888103f6f01d9b4965e6b556a025d5a746c484bf76c2d9c5e2399cd430615bd2",
+    "migrations.log": "b2b37bbb238bc60f5fc324fb0a247db27a287df18cdec79272aa733487aa5fd7",
+    "probes.log": "e5035b5d9df9e080e68cdfbf0059d5c1e6e878508c9eb78b1f30377aefa67198",
+    "quality-probe.log": "b6703c7aafa18ae7361ba4a7bdb36d1a310e7e6f8906e26b5a0ae033ba4c1824"
+  },
+  "source_documents": {
+    "产品体验与待办清单-2026-10-12.md": {
+      "sha256": "611df9cfe2f376f41834e5bdadd9c278a8d695427774b8a74f8271f4abecd320",
+      "copied_unchanged": true
+    },
+    "团队职责与任务协作.md": {
+      "sha256": "c22f7029cf2e270db5e6b08b12e67aa71a5ddedda4f61e15a578a97f7294692b",
+      "copied_unchanged": true
+    }
+  },
+  "limitations": [
+    "No new browser acceptance",
+    "No visual export inspection",
+    "No EXE or old DB upgrade validation",
+    "No remote CI inspection"
+  ],
+  "matrix_coverage": {
+    "unique_prd": 42,
+    "duplicate_prd": 0,
+    "ux_cases": 3,
+    "quality_cases": 3,
+    "engineering_cases": 6
+  },
+  "fixture_validation": "42 unique PRD rows; external 2/3/4 inputs; 17 mentors; all JSON input hashes verified",
+  "final_document_verification": {
+    "date": "2026-10-12T19:48:15.763128+08:00",
+    "branch": "feat/testing",
+    "commit": "43afaf97b0a85975c97e4e7b3d9cfb9e9128b4d0",
+    "python": "3.12.14",
+    "node": "v24.13.1",
+    "checks": [
+      {
+        "check": "documents",
+        "command": [
+          "scripts/check-project-docs.py"
+        ],
+        "returncode": 0,
+        "seconds": 0.297
+      },
+      {
+        "check": "whitespace",
+        "command": [
+          "diff",
+          "--check"
+        ],
+        "returncode": 0,
+        "seconds": 0.078
+      }
+    ],
+    "business_database_unchanged": true,
+    "note": "Probe exit 0 means observations were collected; inspect meets_new_expectation, not a requirement pass."
+  },
+  "document_check_output": "Project documents passed: 40 Markdown files; entry points, fixtures and local links."
+}

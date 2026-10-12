@@ -1,0 +1,2008 @@
+{
+  "teachers": [
+    {
+      "name": "QA教师01",
+      "college": "外院",
+      "isExternal": true,
+      "isSoftwareTeacher": false,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师02",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师03",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师04",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师05",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师06",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师07",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师08",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师09",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师10",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师11",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师12",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师13",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师14",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师15",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师16",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师17",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师18",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师19",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师20",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师21",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师22",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师23",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师24",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师25",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师26",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师27",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师28",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师29",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师30",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师31",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师32",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师33",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师34",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师35",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师36",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师37",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师38",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师39",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师40",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师41",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师42",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师43",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师44",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师45",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师46",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师47",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师48",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "教授",
+      "roles": [
+        "主席",
+        "组长",
+        "普通专家"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师49",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师50",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师51",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师52",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师53",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师54",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师55",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    },
+    {
+      "name": "QA教师56",
+      "college": "软件学院",
+      "isExternal": false,
+      "isSoftwareTeacher": true,
+      "isActive": true,
+      "memberEligible": true,
+      "title": "讲师",
+      "roles": [
+        "秘书"
+      ],
+      "availableTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "campusPreference": "不限",
+      "unavailableTimes": "",
+      "avoidTeacherNames": "",
+      "remark": "合成测试人员，不对应真实人员"
+    }
+  ],
+  "students": [
+    {
+      "name": "QA学生001",
+      "studentNo": "QA202610001",
+      "studentType": "学硕",
+      "mentorName": "QA教师01",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生002",
+      "studentNo": "QA202610002",
+      "studentType": "专硕",
+      "mentorName": "QA教师01",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生003",
+      "studentNo": "QA202610003",
+      "studentType": "学硕",
+      "mentorName": "QA教师01",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生004",
+      "studentNo": "QA202610004",
+      "studentType": "专硕",
+      "mentorName": "QA教师01",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生005",
+      "studentNo": "QA202610005",
+      "studentType": "学硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生006",
+      "studentNo": "QA202610006",
+      "studentType": "专硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生007",
+      "studentNo": "QA202610007",
+      "studentType": "学硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生008",
+      "studentNo": "QA202610008",
+      "studentType": "专硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生009",
+      "studentNo": "QA202610009",
+      "studentType": "学硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生010",
+      "studentNo": "QA202610010",
+      "studentType": "专硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生011",
+      "studentNo": "QA202610011",
+      "studentType": "学硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生012",
+      "studentNo": "QA202610012",
+      "studentType": "专硕",
+      "mentorName": "QA教师02",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生013",
+      "studentNo": "QA202610013",
+      "studentType": "学硕",
+      "mentorName": "QA教师03",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生014",
+      "studentNo": "QA202610014",
+      "studentType": "专硕",
+      "mentorName": "QA教师03",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生015",
+      "studentNo": "QA202610015",
+      "studentType": "学硕",
+      "mentorName": "QA教师03",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生016",
+      "studentNo": "QA202610016",
+      "studentType": "专硕",
+      "mentorName": "QA教师03",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生017",
+      "studentNo": "QA202610017",
+      "studentType": "学硕",
+      "mentorName": "QA教师03",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生018",
+      "studentNo": "QA202610018",
+      "studentType": "专硕",
+      "mentorName": "QA教师03",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生019",
+      "studentNo": "QA202610019",
+      "studentType": "学硕",
+      "mentorName": "QA教师04",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生020",
+      "studentNo": "QA202610020",
+      "studentType": "专硕",
+      "mentorName": "QA教师04",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生021",
+      "studentNo": "QA202610021",
+      "studentType": "学硕",
+      "mentorName": "QA教师04",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生022",
+      "studentNo": "QA202610022",
+      "studentType": "专硕",
+      "mentorName": "QA教师04",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生023",
+      "studentNo": "QA202610023",
+      "studentType": "学硕",
+      "mentorName": "QA教师04",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生024",
+      "studentNo": "QA202610024",
+      "studentType": "专硕",
+      "mentorName": "QA教师04",
+      "campus": "创新港",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生025",
+      "studentNo": "QA202610025",
+      "studentType": "学硕",
+      "mentorName": "QA教师05",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生026",
+      "studentNo": "QA202610026",
+      "studentType": "专硕",
+      "mentorName": "QA教师05",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生027",
+      "studentNo": "QA202610027",
+      "studentType": "学硕",
+      "mentorName": "QA教师05",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生028",
+      "studentNo": "QA202610028",
+      "studentType": "专硕",
+      "mentorName": "QA教师05",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生029",
+      "studentNo": "QA202610029",
+      "studentType": "学硕",
+      "mentorName": "QA教师05",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生030",
+      "studentNo": "QA202610030",
+      "studentType": "专硕",
+      "mentorName": "QA教师05",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生031",
+      "studentNo": "QA202610031",
+      "studentType": "学硕",
+      "mentorName": "QA教师06",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生032",
+      "studentNo": "QA202610032",
+      "studentType": "专硕",
+      "mentorName": "QA教师06",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生033",
+      "studentNo": "QA202610033",
+      "studentType": "学硕",
+      "mentorName": "QA教师06",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生034",
+      "studentNo": "QA202610034",
+      "studentType": "专硕",
+      "mentorName": "QA教师06",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生035",
+      "studentNo": "QA202610035",
+      "studentType": "学硕",
+      "mentorName": "QA教师06",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生036",
+      "studentNo": "QA202610036",
+      "studentType": "专硕",
+      "mentorName": "QA教师06",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生037",
+      "studentNo": "QA202610037",
+      "studentType": "学硕",
+      "mentorName": "QA教师07",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生038",
+      "studentNo": "QA202610038",
+      "studentType": "专硕",
+      "mentorName": "QA教师07",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生039",
+      "studentNo": "QA202610039",
+      "studentType": "学硕",
+      "mentorName": "QA教师07",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生040",
+      "studentNo": "QA202610040",
+      "studentType": "专硕",
+      "mentorName": "QA教师07",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生041",
+      "studentNo": "QA202610041",
+      "studentType": "学硕",
+      "mentorName": "QA教师07",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生042",
+      "studentNo": "QA202610042",
+      "studentType": "专硕",
+      "mentorName": "QA教师07",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生043",
+      "studentNo": "QA202610043",
+      "studentType": "学硕",
+      "mentorName": "QA教师08",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生044",
+      "studentNo": "QA202610044",
+      "studentType": "专硕",
+      "mentorName": "QA教师08",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生045",
+      "studentNo": "QA202610045",
+      "studentType": "学硕",
+      "mentorName": "QA教师08",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生046",
+      "studentNo": "QA202610046",
+      "studentType": "专硕",
+      "mentorName": "QA教师08",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生047",
+      "studentNo": "QA202610047",
+      "studentType": "学硕",
+      "mentorName": "QA教师08",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    },
+    {
+      "name": "QA学生048",
+      "studentNo": "QA202610048",
+      "studentType": "专硕",
+      "mentorName": "QA教师08",
+      "campus": "兴庆",
+      "defenseTypes": [
+        "预答辩",
+        "正式答辩",
+        "中期答辩"
+      ],
+      "secretaryName": "",
+      "remark": "合成测试学生"
+    }
+  ],
+  "rooms": [
+    {
+      "campus": "创新港",
+      "name": "QA教室01",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "创新港",
+      "name": "QA教室02",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "创新港",
+      "name": "QA教室03",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "创新港",
+      "name": "QA教室04",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "兴庆",
+      "name": "QA教室01",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "兴庆",
+      "name": "QA教室02",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "兴庆",
+      "name": "QA教室03",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    },
+    {
+      "campus": "兴庆",
+      "name": "QA教室04",
+      "capacity": 40,
+      "availableTimes": "周一至周五全天",
+      "remark": "合成测试教室"
+    }
+  ]
+}

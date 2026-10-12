@@ -1,0 +1,62 @@
+{
+  "generator": "scripts/qa/prepare-fixtures.py",
+  "synthetic": true,
+  "scenarios": {
+    "normal": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    },
+    "external-2": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    },
+    "external-3": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    },
+    "external-4": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    },
+    "missing-mentor": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    },
+    "color-17": {
+      "teachers": 56,
+      "students": 102,
+      "rooms": 8
+    },
+    "long-export": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    },
+    "insufficient-resources": {
+      "teachers": 3,
+      "students": 48,
+      "rooms": 8
+    },
+    "title-aliases": {
+      "teachers": 56,
+      "students": 48,
+      "rooms": 8
+    }
+  },
+  "hashes": {
+    "color-17.json": "4d1fe7c1f698449fc347b30f87c408a55a7985971d168b89250c3d3221d2bc5f",
+    "external-2.json": "8a7f1f45c9599abf1b8108ec25b0acfb1277c9c4c989af6aa2bf2a29b378e630",
+    "external-3.json": "245d0fd7a963f7b0f6e683b8ebf555d1d79afc83b97b368218d9e25f2f680550",
+    "external-4.json": "8264e51fbbdef4eea053e4167fb8cbbd4448d64b0069e3b9819bceacbee1bac5",
+    "insufficient-resources.json": "87f952448c8e0c34003dda3873a81cda58a73b675a1cfd9ff376283d9938e3cd",
+    "long-export.json": "c23d69803159af24f192ec8ecaf204f12ff8f0e04220568df7c3fcc7e52f5977",
+    "missing-mentor.json": "40140f5aee30e86e42c39551613218960b2fa1a31fd4016bc8495e9b487671b2",
+    "normal.json": "06ac22d7e6ca470f5b2be437d45301f699bce664773fc82228975d992cf98064",
+    "title-aliases.json": "1a4b927e8443c29f8f28b1c369b4c13070575b1beeac8948b89cb967b932d63e"
+  }
+}
