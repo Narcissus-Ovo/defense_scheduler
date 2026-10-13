@@ -1,0 +1,158 @@
+{
+  "scope": "In-process real Django/DRF API with isolated synthetic database; not browser acceptance",
+  "database": ".tmp/qa-baseline/20261013-201735/observations/probes.sqlite3",
+  "excel_import_counts": {
+    "teachers": 56,
+    "students": 48,
+    "rooms": 8
+  },
+  "observations": [
+    {
+      "id": "OBS-001",
+      "requirement": "TASK-P04 / PRD-018",
+      "expected": "预答辩4位普通专家另加1位组长，共5位",
+      "actual": {
+        "http": 200,
+        "committee_counts": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      "meets_new_expectation": false
+    },
+    {
+      "id": "OBS-002",
+      "requirement": "TASK-P07 / PRD-024",
+      "expected": "缺失导师资料时阻止生成并明确提示",
+      "actual": {
+        "http": 200,
+        "versions_created": 1,
+        "publish_http": 400,
+        "conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": null,
+            "groupName": "",
+            "type": "数据完整性提示",
+            "level": "error",
+            "target": "QA缺失导师",
+            "reason": "以下学生填写的导师“QA缺失导师”在教师名单中不存在，本次排期已忽略该导师关系：QA学生001。请核对导师姓名是否与教师表完全一致",
+            "relatedGroupIds": [],
+            "createdAt": "2026-10-13T20:17:40.489762+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 6,
+            "groupName": "G6",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师03",
+            "reason": "导师 QA教师03 未能进入其学生所在的 G6 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              6
+            ],
+            "createdAt": "2026-10-13T20:17:40.489762+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 8,
+            "groupName": "G8",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师 QA教师01 未能进入其学生所在的 G8 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              8
+            ],
+            "createdAt": "2026-10-13T20:17:40.489762+08:00"
+          }
+        ]
+      },
+      "meets_new_expectation": false
+    },
+    {
+      "id": "OBS-EXT-2",
+      "requirement": "TASK-P05 / PRD-011",
+      "expected": {
+        "external_students": 2,
+        "groups": 1
+      },
+      "actual": {
+        "http": 200,
+        "groups": [
+          "G2"
+        ]
+      },
+      "meets_new_expectation": true
+    },
+    {
+      "id": "OBS-EXT-3",
+      "requirement": "TASK-P05 / PRD-011",
+      "expected": {
+        "external_students": 3,
+        "groups": 2
+      },
+      "actual": {
+        "http": 200,
+        "groups": [
+          "G2"
+        ]
+      },
+      "meets_new_expectation": false
+    },
+    {
+      "id": "OBS-EXT-4",
+      "requirement": "TASK-P05 / PRD-011",
+      "expected": {
+        "external_students": 4,
+        "groups": 2
+      },
+      "actual": {
+        "http": 200,
+        "groups": [
+          "G8"
+        ]
+      },
+      "meets_new_expectation": false
+    },
+    {
+      "id": "OBS-003",
+      "requirement": "TASK-P10 / PRD-040",
+      "expected": "同份排期17位导师颜色互异",
+      "actual": {
+        "palette_size": 16,
+        "color_slots": {
+          "QA教师01": 0,
+          "QA教师02": 15,
+          "QA教师03": 14,
+          "QA教师04": 13,
+          "QA教师05": 12,
+          "QA教师06": 11,
+          "QA教师07": 10,
+          "QA教师08": 9,
+          "QA教师09": 8,
+          "QA教师10": 2,
+          "QA教师11": 1,
+          "QA教师12": 0,
+          "QA教师13": 15,
+          "QA教师14": 14,
+          "QA教师15": 13,
+          "QA教师16": 12,
+          "QA教师17": 11
+        },
+        "unique_slots": 11
+      },
+      "meets_new_expectation": false,
+      "evidence_level": "后端配色函数；尚未验证网页和实际导出版式"
+    }
+  ]
+}

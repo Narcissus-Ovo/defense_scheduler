@@ -10,7 +10,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-OUT = ROOT / '.tmp' / 'testing-2026-10-12'
+OUT = (ROOT / os.environ.get('QA_OUTPUT_DIR', '.tmp/testing-2026-10-12')).resolve()
+if not OUT.is_relative_to((ROOT / '.tmp').resolve()):
+    raise ValueError('QA_OUTPUT_DIR must stay inside the project .tmp directory')
 OUT.mkdir(parents=True, exist_ok=True)
 os.environ.update(DJANGO_SETTINGS_MODULE='defense_scheduler.settings', DJANGO_ENV='local',
     DJANGO_DB_PATH=str(OUT / 'probes.sqlite3'), DJANGO_SECRET_KEY='isolated-qa-probes-only-' * 4)

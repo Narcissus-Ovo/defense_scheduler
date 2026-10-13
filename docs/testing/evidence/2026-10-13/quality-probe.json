@@ -1,0 +1,49 @@
+{
+  "id": "OBS-004",
+  "requirement": "TASK-P09",
+  "expected": "五项真实排期软约束具备数据时均计算，次数均等不计总分",
+  "actual": {
+    "defenseType": "预答辩",
+    "totalScore": 1500,
+    "maxScore": 1500,
+    "scores": [
+      {
+        "key": "balanceStudentCount",
+        "label": "学生人数均衡",
+        "score": 500,
+        "maxScore": 500,
+        "description": "每组人数与目标平均相差 0.0 人"
+      },
+      {
+        "key": "preferSeniorTeacher",
+        "label": "正高专家优先",
+        "score": 500,
+        "maxScore": 500,
+        "description": "1 / 1 组由教授担任主席或组长"
+      },
+      {
+        "key": "avoidCrossCampus",
+        "label": "减少跨校区",
+        "score": 500,
+        "maxScore": 500,
+        "description": "2 个教师出席日中，0 个涉及同日跨校区"
+      }
+    ],
+    "suggestions": [
+      {
+        "id": 1,
+        "level": "info",
+        "title": "评分范围",
+        "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+      }
+    ],
+    "generatedAt": "2026/10/13 20:17:44"
+  },
+  "assessedKeys": [
+    "balanceStudentCount",
+    "preferSeniorTeacher",
+    "avoidCrossCampus"
+  ],
+  "meetsFiveMetricExpectation": false,
+  "evidenceLevel": "真实前端评分函数；不代表浏览器交互或待确认公式验收"
+}

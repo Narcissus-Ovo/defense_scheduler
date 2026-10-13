@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-13",
+  "matrix_unique_prd": 42,
+  "fixture_json_count": 9,
+  "fixture_excel_count": 3,
+  "prior_baseline_counts": {
+    "discovered": 243,
+    "passed": 241,
+    "skipped": 2,
+    "seconds": 42.953,
+    "skip_reason": "api/tests.py: real defense documents directory unavailable"
+  },
+  "day13_counts": {
+    "failed": 17,
+    "passed": 26,
+    "blocked": 3
+  },
+  "business_database_unchanged_in_daily_suite": true,
+  "probe_runner": {
+    "date": "2026-10-13T20:17:44.262611+08:00",
+    "branch": "feat/testing",
+    "commit": "54026b98264cc5a682bca8cb0f5d6412858551ed",
+    "python": "3.12.14",
+    "node": "v24.13.1",
+    "checks": [
+      {
+        "check": "probes",
+        "command": [
+          "scripts/qa/probe-baseline.py"
+        ],
+        "returncode": 0,
+        "seconds": 8.079
+      },
+      {
+        "check": "quality",
+        "command": [
+          "scripts/qa/probe-quality.cjs"
+        ],
+        "returncode": 0,
+        "seconds": 0.312
+      }
+    ],
+    "business_database_unchanged": true,
+    "note": "Probe exit 0 means observations were collected; inspect meets_new_expectation, not a requirement pass."
+  },
+  "qa_script_sha256": {
+    "daily-rule-checks.py": "f8fa71b2820899275735e4b00db3c6c03710199695c6b2f63265cc206b2db4c7",
+    "prepare-fixtures.py": "597ec36bfe3effd0c463b1a31bf0fa2ff8f37e884b4d7ab21fab4996aeefe5fb",
+    "probe-baseline.py": "f2bd3e5a7060e1b9f6dce7ad3a8c9f4fbde78f6f3145816278bd67d0933252f7",
+    "probe-quality.cjs": "c2dc8221a465b342fc2989af091ee3acb30c08328598f2f7f5d737fba81fcef5",
+    "run-baseline.py": "e78b8313577ccb77c51ed13582c545bc37f4e15249cd416b97c173a105d0cd83"
+  },
+  "raw_log_sha256": "015c680c503332e0d12e98faa1560190a5eea9f1218f4dc3dd9a1a6fa85fa708",
+  "remote_version_check": "git ls-remote failed: schannel SEC_E_NO_CREDENTIALS; local tested commit only",
+  "limitations": [
+    "No new business fixes in local branch",
+    "No browser acceptance or visual export inspection",
+    "Full-day and tolerance/score formula unresolved",
+    "No EXE or upgrade/recovery acceptance"
+  ],
+  "final_documents_and_whitespace": {
+    "date": "2026-10-13T20:22:28.573267+08:00",
+    "branch": "feat/testing",
+    "commit": "54026b98264cc5a682bca8cb0f5d6412858551ed",
+    "python": "3.12.14",
+    "node": "v24.13.1",
+    "checks": [
+      {
+        "check": "documents",
+        "command": [
+          "scripts/check-project-docs.py"
+        ],
+        "returncode": 0,
+        "seconds": 0.312
+      },
+      {
+        "check": "whitespace",
+        "command": [
+          "diff",
+          "--check"
+        ],
+        "returncode": 0,
+        "seconds": 0.063
+      }
+    ],
+    "business_database_unchanged": true,
+    "note": "Probe exit 0 means observations were collected; inspect meets_new_expectation, not a requirement pass."
+  },
+  "document_check_output": "Project documents passed: 43 Markdown files; entry points, fixtures and local links.",
+  "prior_evidence_unchanged_in_git": true,
+  "output_scope_guards": [
+    {
+      "tool": "scripts/qa/probe-baseline.py",
+      "exit": 1
+    },
+    {
+      "tool": "scripts/qa/probe-quality.cjs",
+      "exit": 1
+    }
+  ]
+}

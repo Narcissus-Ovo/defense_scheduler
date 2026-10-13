@@ -24,7 +24,8 @@ const observation = { id: 'OBS-004', requirement: 'TASK-P09',
   actual: score, assessedKeys: score.scores.map(item => item.key),
   meetsFiveMetricExpectation: score.scores.length === 5,
   evidenceLevel: '真实前端评分函数；不代表浏览器交互或待确认公式验收' }
-const out = path.join(root, '.tmp/testing-2026-10-12')
+const out = path.resolve(root, process.env.QA_OUTPUT_DIR || '.tmp/testing-2026-10-12')
+if (!out.startsWith(path.join(root, '.tmp') + path.sep)) throw new Error('QA_OUTPUT_DIR must stay inside project .tmp')
 fs.mkdirSync(out, { recursive: true })
 fs.writeFileSync(path.join(out, 'quality-probe.json'), JSON.stringify(observation, null, 2) + '\n')
 process.stdout.write(JSON.stringify(observation, null, 2) + '\n')

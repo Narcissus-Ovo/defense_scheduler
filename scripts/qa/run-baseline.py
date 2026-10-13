@@ -37,6 +37,7 @@ def main():
     env.update(DJANGO_ENV='local', DJANGO_SECRET_KEY='local-isolated-verification-only',
         DJANGO_DB_PATH=str(out / 'verification.sqlite3'), PYTHONIOENCODING='utf-8',
         VITE_USE_MOCK='false', VITE_ENABLE_DEMO_TOOLS='false')
+    env['QA_OUTPUT_DIR'] = str(out / 'observations')
     checks = {
         'documents': [sys.executable, 'scripts/check-project-docs.py'],
         'lint': [node, 'node_modules/eslint/bin/eslint.js', '.', '--ext', '.ts,.vue'],
