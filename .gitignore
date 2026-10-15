@@ -1,0 +1,62 @@
+# Frontend Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+build
+release
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/
+.idea
+.agents/
+.claude/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vite
+.trae
+
+# Python / Backend
+venv/ 
+__pycache__/ 
+.pytest_cache/
+*.pyc 
+db.sqlite3 
+.idea/ 
+.DS_Store 
+
+# Test Data and Env
+.env
+*.xlsx
+!WIKI/examples/*.xlsx
+!WIKI/evidence/*.xlsx
+!批量测试_教师_30人.xlsx
+!批量测试_学生_100人.xlsx
+!批量测试_教室_10间.xlsx
+generate_large_test_data.py
+
+# WorkBuddy session data
+.workbuddy/
+
+# Local defense scheduling source/output documents
+排答辩文档/
+newrelease/
+.tmp/
+app-data/
+backups/
+staticfiles/
+.env.production
+.venv/
+.runtime-deps/
