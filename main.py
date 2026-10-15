@@ -19,6 +19,7 @@
     DEFENSE_SCHEDULER_OPEN_BROWSER  是否自动打开浏览器（true/false，默认 true）
 """
 
+
 from desktop_launcher import main
 
 if __name__ == '__main__':
