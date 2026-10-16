@@ -117,6 +117,20 @@ def teacher_can_role(raw: Any, role: str) -> bool:
     return roles is None or role in roles
 
 
+def secretary_is_qualified(teacher: Any, required_title: str = '') -> bool:
+    """An explicitly designated secretary is qualified regardless of title.
+
+    Legacy records without declared roles still use the configured title floor.
+    Active state, availability, role separation and supervisor rules remain
+    independent constraints.
+    """
+    raw = _teacher_raw(teacher)
+    if not teacher_can_role(raw, 'secretary'):
+        return False
+    roles = _allowed_roles(raw)
+    return bool(roles and 'secretary' in roles) or _meets_title(raw.get('title'), required_title)
+
+
 def is_software_teacher(raw: Any) -> bool:
     """Recognize the software-college affiliation or an additional manual flag.
 
@@ -220,7 +234,9 @@ def committee_violations(draft: Any, teachers: Any, rules: Mapping[str, Any]) ->
         if role == "expert" and not _member_eligible(raw):
             report("member_ineligible", f"教师 {name} 不适合担任组员，仅可按资格担任主席/组长", [tid])
             continue
-        if not teacher_can_role(raw, role) or not _meets_title(raw.get("title"), required_title):
+        qualified = (secretary_is_qualified(raw, required_title) if role == 'secretary'
+                     else teacher_can_role(raw, role) and _meets_title(raw.get("title"), required_title))
+        if not qualified:
             report("role_qualification", f"教师 {name} 不具备担任{role_labels[role]}的角色或职称资格", [tid], role=role)
 
     # A legacy rule has no new scenario headcount constraint. V2 always enforces

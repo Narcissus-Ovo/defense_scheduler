@@ -7,7 +7,7 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from scheduling.continuity import formal_mentor_session_violations, inherited_group_labels
-from scheduling.policies import committee_member_target, committee_violations, is_software_teacher, teacher_can_role
+from scheduling.policies import committee_member_target, committee_violations, is_software_teacher, teacher_can_role, secretary_is_qualified
 from scheduling.preferences import external_visit_cost, preference_notices, software_reviewer_load
 
 
@@ -657,12 +657,10 @@ def assign_teachers(
             software_reviewer_load(t, loads, rules),
         ))
 
-    secretary_min_rank = title_rank(rules.get("secretary_title")) if rules.get("secretary_title") else -1
     secretary_candidates = [t for t in available_teachers
-                            if teacher_can_role(t.raw, 'secretary')
+                            if secretary_is_qualified(t.raw, rules.get('secretary_title', ''))
                             and t.id not in supervisor_ids
-                            and (not reserve_formal or t.id not in all_supervisor_ids)
-                            and (secretary_min_rank < 0 or title_rank(t.title) >= secretary_min_rank)]
+                            and (not reserve_formal or t.id not in all_supervisor_ids)]
     preferred_secretary_id = (
         max(sorted(desired_secretary_counts), key=lambda k: desired_secretary_counts[k])
         if desired_secretary_counts else None
@@ -798,12 +796,11 @@ def assign_teachers(
         preferred = next((t for t in available_teachers if t.id == preferred_id), None)
         if (
             preferred is not None
-            and teacher_can_role(preferred.raw, 'secretary')
+            and secretary_is_qualified(preferred.raw, rules.get('secretary_title', ''))
             and preferred.id not in expert_ids
             and preferred.id != chair_id
             and preferred.id not in supervisor_ids
             and (not reserve_formal or preferred.id not in all_supervisor_ids)
-            and (secretary_min_rank < 0 or title_rank(preferred.title) >= secretary_min_rank)
             and not conflicts_with_selected_teachers(preferred.id, expert_ids + ([chair_id] if chair_id else []), teachers)
         ):
             secretary_id = preferred.id
@@ -836,8 +833,7 @@ def assign_teachers(
                 and t.id != chair_id
                 and t.id not in supervisor_ids
                 and (not reserve_formal or t.id not in all_supervisor_ids)
-                and teacher_can_role(t.raw, 'secretary')
-                and (secretary_min_rank < 0 or title_rank(t.title) >= secretary_min_rank)
+                and secretary_is_qualified(t.raw, rules.get('secretary_title', ''))
                 and not conflicts_with_selected_teachers(t.id, expert_ids + ([chair_id] if chair_id else []), teachers)
             ),
             None,
@@ -848,8 +844,8 @@ def assign_teachers(
                 conflict_type="secretary_unavailable",
                 description=(
                     f"{group.group_id} 组找不到可担任秘书的教师"
-                    f"（秘书不能是本组学生的导师，且需满足秘书职称要求），"
-                    f"请增加可参加的教师或放宽秘书职称要求"
+                    f"（指定秘书须启用、时间可用，且不能是本组学生的导师），"
+                    f"请核对秘书名单、可用时间及学生导师关系"
                 ),
                 related_ids=[group.group_id],
             )
@@ -989,9 +985,9 @@ def detect_global_conflicts(
             report('chair_unavailable', '主席/组长职称不满足要求')
         if draft.secretary_id is None:
             report('secretary_unavailable', '尚未分配秘书')
-        elif (rules.get('secretary_title') and draft.secretary_id in teacher_map
-              and title_rank(teacher_map[draft.secretary_id].title) < title_rank(rules['secretary_title'])):
-            report('secretary_unavailable', '秘书职称不满足要求')
+        elif (draft.secretary_id in teacher_map
+              and not secretary_is_qualified(teacher_map[draft.secretary_id].raw, rules.get('secretary_title', ''))):
+            report('secretary_unavailable', '秘书不在可担任名单内，或未指定角色的人员不满足职称要求')
         target = committee_member_target(rules)
         if len(draft.expert_ids) < target:
             report('insufficient_experts', '专家人数不足',

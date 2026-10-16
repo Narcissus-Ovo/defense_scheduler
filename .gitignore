@@ -49,6 +49,7 @@ generate_large_test_data.py
 .workbuddy/
 
 # Local defense scheduling source/output documents
+test-data/
 排答辩文档/
 newrelease/
 .tmp/

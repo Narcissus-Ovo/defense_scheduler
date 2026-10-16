@@ -48,6 +48,24 @@ API 使用服务端 Token 认证，默认有效期为 12 小时（可由配置�
 | 导出 | `GET /schedule/export-excel/`、`GET /schedule/export_word/` |
 | 日志 | `/operation-logs/`，查询、上报及受权限限制的清空 |
 
+## 基础资料导入与预览
+
+教师、学生、教室的 `POST /api/{teachers|students|rooms}/import_data/` 使用管理员认证和 `multipart/form-data`。课表导入仍走独立的 `import_timetable/`，不要混用两类参数。
+
+| 字段 | 含义 |
+| --- | --- |
+| `file` | 必填，CSV 或受支持的 Excel 文件 |
+| `preview` | 字符串 `true` 为仅检查预览；确认导入传 `false` |
+| `campus` | 教室导入可选，仅补充源文件缺失的校区（创新港／兴庆），不覆盖已有值；其他资料须在源文件提供校区 |
+| `importYear` | 可选，1900～2100 四位年份，仅补充缺少年份的日期，不改写完整日期 |
+| `sheetName` | 可选，Excel 工作表名；预览返回工作表列表，不指定时使用默认表 |
+
+预览成功解析后以 HTTP 200 返回数据对象，外层遵守统一响应壳：`preview=true`、`canImport`、`rows`、`validCount`、`invalidCount`、`errors`、`warnings`、`sheets`、`sheetName`。每条 `rows` 包含 `row`、`sheet`、`sourceRows`、`originalTime`、`normalizedTime`、`values`。`canImport=false` 表示检查未通过，不能仅按 HTTP 200 启用确认；文件本身不可读等请求错误仍返回错误状态。
+
+预览不保存业务对象、不写审计日志。正式确认重新上传文件和参数，后端重新校验；有错误 HTTP 400 整批回滚，错误详情保留来源行。前端在文件、工作表、校区或年份变化后使旧预览失效；预览不是可绕过校验的授权凭据。日期范围按每天相同时段展开，上限 366 天；无效时刻和部分缺失的日期／时间必须修正，不能退化为全天。
+
+类型定义见 `src/types/import.ts`，请求封装见 `src/api/import.ts`。特殊地点表头、混合线上地点、同一教室追加导入的已知限制见[验证记录](../releases/导入修复与流程验证-2026-10-17.md)。
+
 ## 排期写入保护
 
 - 新生成请求提供 `request_key`，重复键的重试遵守幂等语义；同键不同规则返回冲突。联合生成的来源、日期与原子性见架构说明。

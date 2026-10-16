@@ -1,24 +1,23 @@
 """Time text adapters shared by import and scheduling boundaries."""
+import re
+from .import_time import DATE, expand_absolute_entry, normalize_text
+
+
 def split_time_text(value):
     if not value:
         return []
     if isinstance(value, list):
-        return [str(item).strip() for item in value if str(item).strip()]
-    normalized = str(value).replace('，', ',').replace(';', ',').replace('；', ',').replace('\n', ',')
+        return [entry for item in value for entry in split_time_text(item)]
+    # The comma separating a booking date/range from its clocks is not a row delimiter.
+    normalized = normalize_text(value)
+    normalized = re.sub(rf'({DATE})\s*[,，]\s*(?=\d{{1,2}}:)', r'\1 ', normalized)
+    normalized = normalized.replace('，', ',').replace(';', ',').replace('；', ',').replace('\n', ',')
     return [item.strip() for item in normalized.split(',') if item.strip()]
 
 
 def normalize_time_text(value):
     """归一化常见时间写法：全角冒号、中文/波浪横线、斜杠日期分隔"""
-    return (
-        str(value)
-        .replace('：', ':')
-        .replace('—', '-')
-        .replace('～', '-')
-        .replace('~', '-')
-        .replace('/', '-')
-        .strip()
-    )
+    return normalize_text(value)
 
 
 def parse_time_entries(raw_text, date_range=None):
@@ -34,11 +33,15 @@ def parse_time_entries(raw_text, date_range=None):
 
     valid, invalid = [], []
     for entry in split_time_text(raw_text):
+        absolute = expand_absolute_entry(entry)
+        if absolute is not None:
+            valid.extend(absolute)
+            continue
         normalized = normalize_time_text(entry)
         try:
             parse_time_range(normalized)
         except SchedulingError:
-            expanded = expand_recurring_entry(entry, *date_range) if date_range else None
+            expanded = expand_recurring_entry(entry, *date_range) if date_range and not re.search(DATE, normalized) else None
             if expanded is None:
                 invalid.append(entry)
             else:
@@ -73,11 +76,13 @@ def find_unrecognized_time_entries(raw_text):
     probe_range = (date_cls(2000, 1, 3), date_cls(2000, 1, 9))
     unrecognized = []
     for entry in split_time_text(raw_text):
+        if expand_absolute_entry(entry) is not None:
+            continue
         try:
             parse_time_range(normalize_time_text(entry))
             continue
         except SchedulingError:
             pass
-        if expand_recurring_entry(entry, *probe_range) is None:
+        if re.search(DATE, normalize_time_text(entry)) or expand_recurring_entry(entry, *probe_range) is None:
             unrecognized.append(entry)
     return unrecognized

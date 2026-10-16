@@ -172,12 +172,13 @@
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">
-              <el-form-item label="秘书最低职称">
+              <el-form-item label="未指定秘书的备用职称门槛">
                 <el-select v-model="form.roleQualification.secretaryMinTitle" style="width: 100%">
                   <el-option label="讲师" value="讲师" />
                   <el-option label="教授" value="教授" />
                   <el-option label="副教授" value="副教授" />
                 </el-select>
+                <span class="text-xs text-gray-500">已在教师资料中指定“秘书”角色的人员，以名单资格为准；仍检查停用、时间和导师回避。</span>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12">

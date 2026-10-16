@@ -22,18 +22,13 @@ class ImportTimeWarningTests(TestCase):
         upload = make_xlsx_upload('教室.xlsx', [['校区', '教室名称', '容量', '可用时间']] + rows)
         return self.client.post('/api/rooms/import_data/', {'file': upload}, format='multipart')
 
-    def test_teacher_unrecognized_time_returns_warning(self):
+    def test_teacher_unrecognized_time_blocks_import(self):
         response = self._import_teachers([['张老师', '教授', '待定']])
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['warningCount'], 1)
-        warning = response.data['warnings'][0]
-        self.assertIn('第 2 行', warning)
-        self.assertIn('张老师', warning)
-        self.assertIn('待定', warning)
-        self.assertIn('周一至周五全天', warning)
-        # 数据本身仍然入库，只是提醒
-        self.assertTrue(Teacher.objects.filter(name='张老师').exists())
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['errors'][0]['row'], 2)
+        self.assertIn('待定', response.data['errors'][0]['errors']['unavailableTimes'][0])
+        self.assertFalse(Teacher.objects.filter(name='张老师').exists())
 
     def test_teacher_recurring_and_absolute_times_pass_silently(self):
         response = self._import_teachers([
@@ -46,16 +41,12 @@ class ImportTimeWarningTests(TestCase):
         self.assertEqual(response.data['warningCount'], 0)
         self.assertEqual(response.data['warnings'], [])
 
-    def test_room_unrecognized_time_returns_warning(self):
+    def test_room_unrecognized_time_blocks_import(self):
         response = self._import_rooms([['创新港', 'B202', 30, '另行通知']])
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['warningCount'], 1)
-        warning = response.data['warnings'][0]
-        self.assertIn('B202', warning)
-        self.assertIn('另行通知', warning)
-        self.assertIn('全时段可用', warning)
-        self.assertTrue(Room.objects.filter(name='B202').exists())
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('另行通知', response.data['errors'][0]['errors']['availableTimes'][0])
+        self.assertFalse(Room.objects.filter(name='B202').exists())
 
     def test_room_no_limit_word_passes_silently(self):
         response = self._import_rooms([['创新港', 'A101', 30, '随时']])
