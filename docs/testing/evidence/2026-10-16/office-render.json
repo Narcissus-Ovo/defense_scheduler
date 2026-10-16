@@ -1,0 +1,38 @@
+[
+  {
+    "status": "rendered",
+    "readOnly": true,
+    "output": "pre-A-excel.pdf",
+    "version": "16.0",
+    "source_sha256": "075D701F7A43D296294CFCC7DD47E5BCA2B0D17419576236A56E54B93B02705F",
+    "input": "pre-A.xlsx",
+    "engine": "Microsoft Excel"
+  },
+  {
+    "status": "rendered",
+    "readOnly": true,
+    "output": "long-history-excel.pdf",
+    "version": "16.0",
+    "source_sha256": "7EE8F12F1DAC0E6EDCC9C33AD5F43BFDC294844A2A3A2D9EEBBFC48DEAB347E7",
+    "input": "long-history.xlsx",
+    "engine": "Microsoft Excel"
+  },
+  {
+    "status": "rendered",
+    "readOnly": true,
+    "output": "pre-A-word.pdf",
+    "version": "16.0",
+    "source_sha256": "93E1F162BA4C61A3F1F54AC89D349023A4AF1A78E1E4DFACE5A40BFB1DFE1908",
+    "input": "pre-A.docx",
+    "engine": "Microsoft Word"
+  },
+  {
+    "status": "rendered",
+    "readOnly": true,
+    "output": "long-history-word.pdf",
+    "version": "16.0",
+    "source_sha256": "8654691B1FE7CDC0890559F1884E6566506B77408DC284B005930E6B24AC88B1",
+    "input": "long-history.docx",
+    "engine": "Microsoft Word"
+  }
+]

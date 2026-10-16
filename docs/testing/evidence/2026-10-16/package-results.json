@@ -1,0 +1,17 @@
+{
+  "candidate_only": true,
+  "final_release_allowed": false,
+  "sha256": {
+    "DefenseScheduler.exe": "a47d10ff50eedfa98f8709f98c79ceaa180022fe770f2951bcffeb51cf9dfdaa",
+    "DefenseScheduler-QA-20261016-win-x64.zip": "c59281f0adf7166497937dcb6e1cf7cd836f8a83cfc915e87a393f34b7158358",
+    "README-QA.txt": "97c41b6561179d7b72a176985233f5ae1ee5ac338fc58c92f12f34854aaec292"
+  },
+  "archive_entries": [
+    "DefenseScheduler.exe",
+    "README-QA.txt",
+    "SHA256SUMS.txt"
+  ],
+  "no_business_database_or_credentials": true,
+  "tested_exe_matches": true,
+  "zip_integrity": "ok"
+}

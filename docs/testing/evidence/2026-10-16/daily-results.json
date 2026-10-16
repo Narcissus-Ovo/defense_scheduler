@@ -1,0 +1,1069 @@
+{
+  "date": "2026-10-16",
+  "timezone": "Asia/Shanghai",
+  "recorded_at": "2026-10-16T21:04:38.299102+08:00",
+  "commit": "a426761e85dc5200732f34f8ef317567f6f68c90",
+  "branch": "feat/testing",
+  "scope": "真实Django/DRF服务，隔离SQLite与APIClient测试认证；非浏览器验收",
+  "cases": [
+    {
+      "id": "CFG-pre-4",
+      "task": "P04",
+      "expected": "规则保存pre 4人应拒绝",
+      "actual": {
+        "http": 200,
+        "stored_config_count": 1
+      },
+      "status": "failed"
+    },
+    {
+      "id": "CFG-pre-5",
+      "task": "P04",
+      "expected": "规则保存pre 5人应允许",
+      "actual": {
+        "http": 200,
+        "stored_config_count": 1
+      },
+      "status": "passed"
+    },
+    {
+      "id": "CFG-formal-4",
+      "task": "P04",
+      "expected": "规则保存formal 4人应拒绝",
+      "actual": {
+        "http": 400,
+        "stored_config_count": 0
+      },
+      "status": "passed"
+    },
+    {
+      "id": "CFG-formal-5",
+      "task": "P04",
+      "expected": "规则保存formal 5人应允许",
+      "actual": {
+        "http": 200,
+        "stored_config_count": 1
+      },
+      "status": "passed"
+    },
+    {
+      "id": "CFG-formal-6",
+      "task": "P04",
+      "expected": "规则保存formal 6人应拒绝",
+      "actual": {
+        "http": 400,
+        "stored_config_count": 0
+      },
+      "status": "passed"
+    },
+    {
+      "id": "TITLE-教授",
+      "task": "P04",
+      "expected": "职称跨层口径一致，算法等级为3",
+      "actual": {
+        "algorithm_rank": 3,
+        "expected_rank": 3
+      },
+      "status": "passed"
+    },
+    {
+      "id": "TITLE-研究员",
+      "task": "P04",
+      "expected": "职称跨层口径一致，算法等级为3",
+      "actual": {
+        "algorithm_rank": -1,
+        "expected_rank": 3
+      },
+      "status": "failed"
+    },
+    {
+      "id": "TITLE-副教授",
+      "task": "P04",
+      "expected": "职称跨层口径一致，算法等级为2",
+      "actual": {
+        "algorithm_rank": 2,
+        "expected_rank": 2
+      },
+      "status": "passed"
+    },
+    {
+      "id": "TITLE-副研究员",
+      "task": "P04",
+      "expected": "职称跨层口径一致，算法等级为2",
+      "actual": {
+        "algorithm_rank": -1,
+        "expected_rank": 2
+      },
+      "status": "failed"
+    },
+    {
+      "id": "TITLE-讲师",
+      "task": "P04",
+      "expected": "职称跨层口径一致，算法等级为1",
+      "actual": {
+        "algorithm_rank": 1,
+        "expected_rank": 1
+      },
+      "status": "passed"
+    },
+    {
+      "id": "GEN-pre-default",
+      "task": "P04",
+      "expected": "预默认5位委员会且可发布",
+      "actual": {
+        "generate_http": 200,
+        "committee_counts": [
+          4
+        ],
+        "publish_http": 200,
+        "errors": []
+      },
+      "status": "failed"
+    },
+    {
+      "id": "GEN-pre-five",
+      "task": "P04",
+      "expected": "显式预5人配置生效并可发布",
+      "actual": {
+        "generate_http": 200,
+        "committee_counts": [
+          5
+        ],
+        "publish_http": 200,
+        "errors": []
+      },
+      "status": "passed"
+    },
+    {
+      "id": "GEN-formal-five",
+      "task": "P04",
+      "expected": "正式恰好5位含主席并可发布",
+      "actual": {
+        "generate_http": 200,
+        "committee_counts": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ],
+        "publish_http": 200,
+        "errors": []
+      },
+      "status": "passed"
+    },
+    {
+      "id": "GEN-mid-five",
+      "task": "P04",
+      "expected": "中期至少5位含组长并可发布",
+      "actual": {
+        "generate_http": 200,
+        "committee_counts": [
+          5,
+          5,
+          5,
+          5
+        ],
+        "publish_http": 200,
+        "errors": []
+      },
+      "status": "passed"
+    },
+    {
+      "id": "MID-size-9",
+      "task": "P04/P05",
+      "expected": "中期9学生：10～13可行，其余此单批次人数不可发布",
+      "actual": {
+        "input_students": 9,
+        "group_sizes": [
+          9
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "MID-size-10",
+      "task": "P04/P05",
+      "expected": "中期10学生：10～13可行，其余此单批次人数不可发布",
+      "actual": {
+        "input_students": 10,
+        "group_sizes": [
+          10
+        ],
+        "publish_http": 200
+      },
+      "status": "passed"
+    },
+    {
+      "id": "MID-size-12",
+      "task": "P04/P05",
+      "expected": "中期12学生：10～13可行，其余此单批次人数不可发布",
+      "actual": {
+        "input_students": 12,
+        "group_sizes": [
+          12
+        ],
+        "publish_http": 200
+      },
+      "status": "passed"
+    },
+    {
+      "id": "MID-size-13",
+      "task": "P04/P05",
+      "expected": "中期13学生：10～13可行，其余此单批次人数不可发布",
+      "actual": {
+        "input_students": 13,
+        "group_sizes": [
+          13
+        ],
+        "publish_http": 200
+      },
+      "status": "passed"
+    },
+    {
+      "id": "MID-size-14",
+      "task": "P04/P05",
+      "expected": "中期14学生：10～13可行，其余此单批次人数不可发布",
+      "actual": {
+        "input_students": 14,
+        "group_sizes": [
+          12,
+          2
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "EDIT-pre-four",
+      "task": "P04",
+      "expected": "预手调至总4人重验标错且禁止发布",
+      "actual": {
+        "adjust_http": 200,
+        "error_types": [],
+        "publish_http": 200,
+        "requested_total": 4
+      },
+      "status": "failed"
+    },
+    {
+      "id": "EDIT-formal-six",
+      "task": "P04",
+      "expected": "正式手调至6人重验标错且禁止发布",
+      "actual": {
+        "adjust_http": 200,
+        "error_types": [
+          "专家人数冲突",
+          "时间冲突",
+          "导师回避冲突",
+          "导师回避冲突",
+          "导师回避冲突",
+          "导师回避冲突",
+          "导师回避冲突",
+          "导师回避冲突",
+          "导师与学生场次不一致"
+        ],
+        "publish_http": 400,
+        "requested_total": 6
+      },
+      "status": "passed"
+    },
+    {
+      "id": "EDIT-title-lecturer",
+      "task": "P04",
+      "expected": "预组长变讲师后拒绝发布",
+      "actual": {
+        "update_http": 200,
+        "title": "讲师",
+        "error_types": [
+          "角色资格冲突",
+          "人员冲突"
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "EDIT-title-researcher",
+      "task": "P04",
+      "expected": "正高研究员符合预组长资格",
+      "actual": {
+        "update_http": 200,
+        "title": "研究员",
+        "error_types": [
+          "角色资格冲突",
+          "人员冲突"
+        ],
+        "publish_http": 400
+      },
+      "status": "failed"
+    },
+    {
+      "id": "MENTOR-unknown",
+      "task": "P07",
+      "expected": "导师资料无效时生成前拒绝且无新版本",
+      "actual": {
+        "generate_http": 200,
+        "version_count": 1,
+        "publish_http": 400,
+        "conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": null,
+            "groupName": "",
+            "type": "数据完整性提示",
+            "level": "error",
+            "target": "QA缺失导师",
+            "reason": "以下学生填写的导师“QA缺失导师”在教师名单中不存在，本次排期已忽略该导师关系：QA学生001。请核对导师姓名是否与教师表完全一致",
+            "relatedGroupIds": [],
+            "createdAt": "2026-10-16T21:04:17.838014+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 6,
+            "groupName": "G6",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师03",
+            "reason": "导师 QA教师03 未能进入其学生所在的 G6 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              6
+            ],
+            "createdAt": "2026-10-16T21:04:17.838014+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 7,
+            "groupName": "G7",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师04",
+            "reason": "导师 QA教师04 未能进入其学生所在的 G7 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              7
+            ],
+            "createdAt": "2026-10-16T21:04:17.838014+08:00"
+          },
+          {
+            "id": 4,
+            "defenseType": "预答辩",
+            "groupId": 8,
+            "groupName": "G8",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师 QA教师01 未能进入其学生所在的 G8 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              8
+            ],
+            "createdAt": "2026-10-16T21:04:17.838014+08:00"
+          }
+        ]
+      },
+      "status": "failed"
+    },
+    {
+      "id": "MENTOR-empty",
+      "task": "P07",
+      "expected": "导师资料无效时生成前拒绝且无新版本",
+      "actual": {
+        "generate_http": 200,
+        "version_count": 1,
+        "publish_http": 400,
+        "conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": null,
+            "groupName": "",
+            "type": "学生缺少导师",
+            "level": "error",
+            "target": "",
+            "reason": "学生 QA学生001 尚未设置导师，请补齐导师关系后发布",
+            "relatedGroupIds": [],
+            "createdAt": "2026-10-16T21:04:18.934443+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 6,
+            "groupName": "G6",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师03",
+            "reason": "导师 QA教师03 未能进入其学生所在的 G6 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              6
+            ],
+            "createdAt": "2026-10-16T21:04:18.934443+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 7,
+            "groupName": "G7",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师04",
+            "reason": "导师 QA教师04 未能进入其学生所在的 G7 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              7
+            ],
+            "createdAt": "2026-10-16T21:04:18.934443+08:00"
+          },
+          {
+            "id": 4,
+            "defenseType": "预答辩",
+            "groupId": 8,
+            "groupName": "G8",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师 QA教师01 未能进入其学生所在的 G8 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              8
+            ],
+            "createdAt": "2026-10-16T21:04:18.934443+08:00"
+          }
+        ]
+      },
+      "status": "failed"
+    },
+    {
+      "id": "MENTOR-inactive",
+      "task": "P07",
+      "expected": "导师资料无效时生成前拒绝且无新版本",
+      "actual": {
+        "generate_http": 200,
+        "version_count": 1,
+        "publish_http": 400,
+        "conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": null,
+            "groupName": "",
+            "type": "数据完整性提示",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师“QA教师01”未设置为可参加【预答辩】，其学生（QA学生001、QA学生002、QA学生003、QA学生004、QA学生005等6人）本次无法应用导师同组/回避约束。请在教师数据中补充可参加答辩类型",
+            "relatedGroupIds": [],
+            "createdAt": "2026-10-16T21:04:20.027912+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 7,
+            "groupName": "G7",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师03",
+            "reason": "导师 QA教师03 未能进入其学生所在的 G7 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              7
+            ],
+            "createdAt": "2026-10-16T21:04:20.027912+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 8,
+            "groupName": "G8",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师04",
+            "reason": "导师 QA教师04 未能进入其学生所在的 G8 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              8
+            ],
+            "createdAt": "2026-10-16T21:04:20.027912+08:00"
+          }
+        ]
+      },
+      "status": "failed"
+    },
+    {
+      "id": "MENTOR-filtered",
+      "task": "P07",
+      "expected": "导师资料无效时生成前拒绝且无新版本",
+      "actual": {
+        "generate_http": 200,
+        "version_count": 1,
+        "publish_http": 400,
+        "conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": null,
+            "groupName": "",
+            "type": "数据完整性提示",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师“QA教师01”未设置为可参加【预答辩】，其学生（QA学生001、QA学生002、QA学生003、QA学生004、QA学生005等6人）本次无法应用导师同组/回避约束。请在教师数据中补充可参加答辩类型",
+            "relatedGroupIds": [],
+            "createdAt": "2026-10-16T21:04:21.132068+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 7,
+            "groupName": "G7",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师03",
+            "reason": "导师 QA教师03 未能进入其学生所在的 G7 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              7
+            ],
+            "createdAt": "2026-10-16T21:04:21.132068+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 8,
+            "groupName": "G8",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师04",
+            "reason": "导师 QA教师04 未能进入其学生所在的 G8 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              8
+            ],
+            "createdAt": "2026-10-16T21:04:21.132068+08:00"
+          }
+        ]
+      },
+      "status": "failed"
+    },
+    {
+      "id": "EXTERNAL-2",
+      "task": "P05",
+      "expected": "外院2学生应集中1组，重验发布一致",
+      "actual": {
+        "groups": [
+          "G2"
+        ],
+        "recheck_http": 200,
+        "recheck_conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "外院教师集中安排提示",
+            "level": "warning",
+            "target": "QA教师01",
+            "reason": "外院教师 QA教师01 需在 2 天到场，可在人员与教室允许时进一步集中安排",
+            "relatedGroupIds": [
+              1,
+              2
+            ],
+            "createdAt": "2026-10-16T21:04:22.197511+08:00"
+          }
+        ],
+        "publish_http": 200
+      },
+      "status": "passed"
+    },
+    {
+      "id": "EXTERNAL-3",
+      "task": "P05",
+      "expected": "外院3学生应集中2组，重验发布一致",
+      "actual": {
+        "groups": [
+          "G2"
+        ],
+        "recheck_http": 200,
+        "recheck_conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "外院教师集中安排提示",
+            "level": "warning",
+            "target": "QA教师01",
+            "reason": "外院教师 QA教师01 需在 2 天到场，可在人员与教室允许时进一步集中安排",
+            "relatedGroupIds": [
+              1,
+              2
+            ],
+            "createdAt": "2026-10-16T21:04:23.261606+08:00"
+          }
+        ],
+        "publish_http": 200
+      },
+      "status": "failed"
+    },
+    {
+      "id": "EXTERNAL-4",
+      "task": "P05",
+      "expected": "外院4学生应集中2组，重验发布一致",
+      "actual": {
+        "groups": [
+          "G2"
+        ],
+        "recheck_http": 200,
+        "recheck_conflicts": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "外院教师集中安排提示",
+            "level": "warning",
+            "target": "QA教师01",
+            "reason": "外院教师 QA教师01 需在 2 天到场，可在人员与教室允许时进一步集中安排",
+            "relatedGroupIds": [
+              1,
+              2
+            ],
+            "createdAt": "2026-10-16T21:04:24.341692+08:00"
+          }
+        ],
+        "publish_http": 200
+      },
+      "status": "failed"
+    },
+    {
+      "id": "COURSE-morning",
+      "task": "P07",
+      "expected": "有课整个半天不能排，两半天皆占用不可发布",
+      "actual": {
+        "busy": "2026-10-12 10:00-11:00",
+        "start_hours": [
+          8
+        ],
+        "publish_http": 400,
+        "room_availability": "周一至周五全天",
+        "errors": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "专家人数冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 专家人数应为至少 5 人（含主席/组长），实际 0 人",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:25.405010+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 尚未分配主席/组长",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:25.405010+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 尚未分配秘书",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:25.405010+08:00"
+          },
+          {
+            "id": 4,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 专家人数不足",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:25.405010+08:00"
+          },
+          {
+            "id": 5,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师 QA教师01 未能进入其学生所在的 G1 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:25.405010+08:00"
+          }
+        ],
+        "error_count": 5
+      },
+      "status": "failed"
+    },
+    {
+      "id": "COURSE-afternoon",
+      "task": "P07",
+      "expected": "有课整个半天不能排，两半天皆占用不可发布",
+      "actual": {
+        "busy": "2026-10-12 15:00-16:00",
+        "start_hours": [
+          8
+        ],
+        "publish_http": 400,
+        "room_availability": "周一至周五全天",
+        "errors": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "专家人数冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 专家人数应为至少 5 人（含主席/组长），实际 0 人",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:26.465814+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 尚未分配主席/组长",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:26.465814+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 尚未分配秘书",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:26.465814+08:00"
+          },
+          {
+            "id": 4,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 专家人数不足",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:26.465814+08:00"
+          },
+          {
+            "id": 5,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师 QA教师01 未能进入其学生所在的 G1 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:26.465814+08:00"
+          }
+        ],
+        "error_count": 5
+      },
+      "status": "failed"
+    },
+    {
+      "id": "COURSE-both",
+      "task": "P07",
+      "expected": "有课整个半天不能排，两半天皆占用不可发布",
+      "actual": {
+        "busy": "2026-10-12 10:00-11:00,2026-10-12 15:00-16:00",
+        "start_hours": [
+          8
+        ],
+        "publish_http": 400,
+        "room_availability": "周一至周五全天",
+        "errors": [
+          {
+            "id": 1,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "专家人数冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 专家人数应为至少 5 人（含主席/组长），实际 0 人",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:27.493938+08:00"
+          },
+          {
+            "id": 2,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 尚未分配主席/组长",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:27.493938+08:00"
+          },
+          {
+            "id": 3,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 尚未分配秘书",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:27.493938+08:00"
+          },
+          {
+            "id": 4,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "人员冲突",
+            "level": "error",
+            "target": "G1",
+            "reason": "G1 专家人数不足",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:27.493938+08:00"
+          },
+          {
+            "id": 5,
+            "defenseType": "预答辩",
+            "groupId": 1,
+            "groupName": "G1",
+            "type": "导师未与学生同组",
+            "level": "error",
+            "target": "QA教师01",
+            "reason": "导师 QA教师01 未能进入其学生所在的 G1 组（本类答辩要求导师与学生同组），请检查该导师的时间和参与设置",
+            "relatedGroupIds": [
+              1
+            ],
+            "createdAt": "2026-10-16T21:04:27.493938+08:00"
+          }
+        ],
+        "error_count": 5
+      },
+      "status": "passed"
+    },
+    {
+      "id": "COURSE-split-morning",
+      "task": "P07",
+      "expected": "教室显式分半天时避开有课半天，另一半天可发布",
+      "actual": {
+        "busy": "2026-10-12 10:00-11:00",
+        "start_hours": [
+          14
+        ],
+        "publish_http": 200,
+        "room_availability": "明确上午下午",
+        "errors": [],
+        "error_count": 0
+      },
+      "status": "passed"
+    },
+    {
+      "id": "COURSE-split-afternoon",
+      "task": "P07",
+      "expected": "教室显式分半天时避开有课半天，另一半天可发布",
+      "actual": {
+        "busy": "2026-10-12 15:00-16:00",
+        "start_hours": [
+          8
+        ],
+        "publish_http": 200,
+        "room_availability": "明确上午下午",
+        "errors": [],
+        "error_count": 0
+      },
+      "status": "passed"
+    },
+    {
+      "id": "ROLE-member",
+      "task": "P04/P07",
+      "expected": "资料资格/不宜同组变化后重验并阻止错误发布",
+      "actual": {
+        "update_http": 200,
+        "error_types": [
+          "组员资格冲突"
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "ROLE-secretary",
+      "task": "P04/P07",
+      "expected": "资料资格/不宜同组变化后重验并阻止错误发布",
+      "actual": {
+        "update_http": 200,
+        "error_types": [
+          "角色资格冲突",
+          "人员冲突"
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "ROLE-forbidden",
+      "task": "P04/P07",
+      "expected": "资料资格/不宜同组变化后重验并阻止错误发布",
+      "actual": {
+        "update_http": 200,
+        "error_types": [
+          "人员角色冲突",
+          "人员角色冲突"
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "SOFTWARE-2",
+      "task": "P06",
+      "expected": "正式软件学院主体3/5边界发布一致",
+      "actual": {
+        "software_reviewers": 2,
+        "error_types": [
+          "软件学院专家人数不足"
+        ],
+        "publish_http": 400
+      },
+      "status": "passed"
+    },
+    {
+      "id": "SOFTWARE-3",
+      "task": "P06",
+      "expected": "正式软件学院主体3/5边界发布一致",
+      "actual": {
+        "software_reviewers": 3,
+        "error_types": [],
+        "publish_http": 200
+      },
+      "status": "passed"
+    },
+    {
+      "id": "LINKED-external-three",
+      "task": "P05",
+      "expected": "联排两个阶段外院3名学生分2组或硬冲突拒绝发布",
+      "actual": {
+        "generate_http": 200,
+        "external_groups_by_stage": {
+          "pre": [
+            "G2"
+          ],
+          "formal": [
+            "G2"
+          ]
+        },
+        "publish_http_by_stage": {
+          "pre": 200,
+          "formal": 400
+        }
+      },
+      "status": "failed"
+    },
+    {
+      "id": "RANDOM-seed",
+      "task": "P06",
+      "expected": "本轮随机补充且同种子可复现，不能仅保存未使用字段",
+      "actual": {
+        "same_seed_equal": true,
+        "different_seed_equal": true,
+        "rng_implementation_found_in_current_entries": false,
+        "note": "不同种子相同输出单独不能证明失败；结合入口仍为确定性排序，仅证明当前缺实现线索，不验收随机分布"
+      },
+      "status": "failed"
+    },
+    {
+      "id": "CHAIR-internal-priority",
+      "task": "P06",
+      "expected": "同等正高资格及可用条件下院内主席优先",
+      "actual": {
+        "chair": "QA教师01",
+        "is_external": true,
+        "internal_eligible_count": 47,
+        "avoidance": false,
+        "note": "回避关闭，全部正高软件学院标记相同且时段可用，按外院标记优先"
+      },
+      "status": "failed"
+    },
+    {
+      "id": "FULLDAY-definition",
+      "task": "P08",
+      "status": "blocked",
+      "expected": "整天定义未获A确认",
+      "actual": "不自行制定标准"
+    },
+    {
+      "id": "BALANCE-tolerance",
+      "task": "P06",
+      "status": "blocked",
+      "expected": "尽量均等的资源受限容差与抽取口径未确认",
+      "actual": "不自行制定标准"
+    },
+    {
+      "id": "QUALITY-formula",
+      "task": "P09",
+      "status": "blocked",
+      "expected": "评分公式与缺数据分母未获确认",
+      "actual": "不自行制定标准"
+    }
+  ],
+  "counts": {
+    "failed": 17,
+    "passed": 26,
+    "blocked": 3
+  },
+  "business_db_sha256_before": "c881a0f31a32b3b88148740208842c45f3caad8be2142866ecff84216542bc7a",
+  "business_db_sha256_after": "c881a0f31a32b3b88148740208842c45f3caad8be2142866ecff84216542bc7a",
+  "business_db_unchanged": true
+}

@@ -1,0 +1,984 @@
+{
+  "cases": [
+    {
+      "id": "api.test_algorithm_v2.FormalSecretaryExportV2Tests.test_explicit_empty_formal_binding_does_not_fall_back_to_global_secretary",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalSecretaryExportV2Tests.test_explicit_formal_binding_is_used_without_writing_global_student",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalSecretaryExportV2Tests.test_frozen_formal_export_does_not_reproject_changed_bindings",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalSecretaryExportV2Tests.test_later_pre_rebinding_does_not_change_formal_or_frozen_source_view",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalSecretaryExportV2Tests.test_legacy_formal_snapshot_without_binding_keeps_existing_student_view",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalSecretaryExportV2Tests.test_missing_snapshot_teacher_keeps_invalid_id_visible_to_validation",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.LinkedResourceServiceV2Tests.test_linked_replan_after_published_shared_secretary_is_valid_and_keeps_history",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_adapter_preserves_explicit_identity_and_role_fields",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_adjust_group_rejects_mismatched_teacher_id_without_mutation",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_explicit_formal_secretary_change_updates_only_its_version_binding",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_fk_snapshots_are_serializable_and_excel_contains_roster_remarks",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_formal_source_does_not_follow_new_current_pre_version",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_formal_student_rebind_does_not_change_source_pre_binding",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_formal_time_form_does_not_rebind_a_moved_student",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_formal_validation_ignores_later_global_secretary_binding",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_linked_failure_rolls_back_both_versions_and_student_bindings",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_linked_generation_pins_source_groups_and_retries_without_new_versions",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_linked_pre_revalidation_keeps_new_round_secretary_bindings",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_move_explicitly_uses_selected_secretary_without_rebinding_target_students",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_move_keeps_secretary_and_moves_mentor_then_rechecks_conflicts",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_new_linked_round_ignores_retired_or_unknown_old_secretaries",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_pre_secretary_id_edit_updates_only_that_group_binding",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_publish_rechecks_v2_role_qualifications_after_reference_edit",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_published_fk_names_remain_consistent_in_results_and_exports",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.ArchitectureV2IntegrationTests.test_teacher_import_keeps_v2_qualification_columns",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_auth_password.AuthChangePasswordTests.test_change_password_success_rotates_token",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_auth_password.AuthChangePasswordTests.test_requires_authentication",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_auth_password.AuthChangePasswordTests.test_same_password_rejected",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_auth_password.AuthChangePasswordTests.test_weak_new_password_rejected",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_auth_password.AuthChangePasswordTests.test_wrong_old_password_rejected",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.DataMigrationV2Tests.test_migration_matches_exact_names_and_leaves_ambiguous_normalization_unresolved",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.DataMigrationV2Tests.test_migration_resolves_names_and_preserves_unknown_names_and_custom_configuration",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_admin_fk_choice_populates_legacy_name",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_external_college_name_does_not_imply_software_teacher_without_flag",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_failed_safe_rename_keeps_existing_references",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_id_name_conflict_is_rejected_before_save",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_id_write_populates_name_fields",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_legacy_name_import_binds_existing_teacher",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_name_only_update_rebinds_and_explicit_null_clears",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_read_uses_current_fk_name_when_legacy_text_is_stale",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_source_pre_version_uses_stable_identity",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_teacher_delete_keeps_legacy_names_and_nulls_ids",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_teacher_flags_keep_existing_records_enabled",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_teacher_rename_updates_links_and_exact_exclusion_tokens",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_unrelated_partial_update_preserves_relationship",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.ReferenceIdentityV2Tests.test_unresolved_name_remains_compatible_and_new_teacher_links_it",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.RuleDefaultsV2Tests.test_defaults_do_not_share_mutable_nested_sections",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.RuleDefaultsV2Tests.test_each_scenario_matches_documented_counts_and_today",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.RuleDefaultsV2Tests.test_expert_bounds_cannot_bypass_documented_headcounts",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.RuleDefaultsV2Tests.test_invalid_types_and_role_floor_return_validation_errors",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.RuleDefaultsV2Tests.test_partial_rule_update_preserves_custom_dates_and_bounds",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_data_v2.RuleDefaultsV2Tests.test_rule_payload_must_be_an_object",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_import_warnings.ImportTimeWarningTests.test_room_no_limit_word_passes_silently",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_import_warnings.ImportTimeWarningTests.test_room_unrecognized_time_returns_warning",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_import_warnings.ImportTimeWarningTests.test_teacher_recurring_and_absolute_times_pass_silently",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_import_warnings.ImportTimeWarningTests.test_teacher_unrecognized_time_returns_warning",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_fullwidth_and_tilde_normalization",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_multiple_weekdays_listed",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_no_limit_words_expand_to_empty",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_recurring_outside_range_returns_empty",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_unrecognized_text_returns_none",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_weekday_only_defaults_to_full_day",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_weekday_span_full_day",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_weekend_with_explicit_clock",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_weekly_afternoon",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_workday_keyword",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.ExpandRecurringEntryTests.test_xingqi_morning",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.RecurringTimeScheduleIntegrationTests.test_room_recurring_available_time_takes_effect",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.RecurringTimeScheduleIntegrationTests.test_room_recurring_time_without_match_generates_notice",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_recurring_time.RecurringTimeScheduleIntegrationTests.test_teacher_recurring_unavailable_time_takes_effect",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_conflict_check_and_current_agree_after_edit",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_cross_version_move_is_rejected_without_writes",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_generation_retry_reuses_version",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_group_edit_synchronizes_secretary_and_audit_actor",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_missing_revision_is_rejected_without_mutation",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_overlapping_intervals_report_teacher_and_room_conflicts",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_publish_rejects_conflicts",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_published_version_is_frozen_and_export_uses_snapshot",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_retired_version_cannot_be_adjusted",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_stale_revision_is_rejected_without_mutation",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.ScheduleIntegrityTests.test_whole_group_edit_cannot_duplicate_student",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.SessionSecurityTests.test_expired_token_is_rejected",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.SessionSecurityTests.test_logout_revokes_the_server_token",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmGroupSizeTests.test_check_group_size_flags_out_of_range",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmGroupSizeTests.test_grouping_unchanged_without_min_max",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmGroupSizeTests.test_small_tail_group_merges_into_previous",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmGroupSizeTests.test_tail_group_kept_when_merge_would_exceed_max",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmGroupSizeTests.test_validate_inputs_rejects_end_date_before_start_date",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmTitleRankTests.test_associate_professor_does_not_satisfy_professor_requirement",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmTitleRankTests.test_higher_title_satisfies_lower_requirement",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmTitleRankTests.test_no_requirement_always_passes",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AlgorithmTitleRankTests.test_unknown_requirement_falls_back_to_exact_match",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.AuthContractTests.test_api_requires_authentication_except_login",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.BaseDataConstraintTests.test_room_name_can_repeat_across_campuses_at_database_level",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.BaseDataConstraintTests.test_room_name_is_unique_per_campus_at_database_level",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.BaseDataConstraintTests.test_student_name_allows_duplicates_with_different_student_no",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.BaseDataConstraintTests.test_student_no_is_unique_at_database_level",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.BaseDataConstraintTests.test_teacher_name_is_unique_at_database_level",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.DesktopStartupDependencyTests.test_api_views_defers_heavy_spreadsheet_imports_until_needed",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_accepts_supported_extensions_case_insensitively",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_duplicate_row_number_is_not_last_row_index",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_error_envelope_preserves_row_errors_in_rendered_body",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_is_atomic_and_returns_structured_row_errors",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_rejects_duplicate_rooms_in_same_campus_in_same_file",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_rejects_duplicate_student_names_in_same_file",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_rejects_duplicate_teacher_names_in_same_file",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_rejects_empty_data_files",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_rejects_files_with_too_many_rows",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_import_rejects_oversized_files_before_parsing",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_operation_logs_api_supports_frontend_contract",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_room_api_allows_same_name_in_different_campus",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_room_api_rejects_duplicate_names_in_same_campus",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_room_import_accepts_borrow_request_sheet_with_date_and_class_periods",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_room_import_accepts_card_style_innovation_harbor_borrow_sheet",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_room_import_accepts_chinese_headers",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_room_import_skips_card_style_noise_rows_and_merges_duplicate_rooms",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_rule_config_api_supports_frontend_contract",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_rule_config_rejects_end_date_before_start_date",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_rule_config_rejects_invalid_student_count_bounds",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_api_rejects_duplicate_names",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_accepts_chinese_headers",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_accepts_formal_location_sheet_with_title_rows",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_accepts_midterm_location_sheet_with_header_after_blank_row",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_allows_same_name_students_with_different_student_no",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_merges_defense_types_for_existing_real_data_rows",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_merges_explicit_defense_type_text_for_existing_rows",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_student_import_normalizes_numeric_student_no_cells",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_teacher_api_rejects_duplicate_names",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_teacher_import_accepts_assigned_leader_secretary_roster",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.IntegrationContractTests.test_teacher_import_accepts_chinese_headers_and_separators",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.MentorColorSourceTests.test_blank_name_falls_back_to_unknown_slot",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.MentorColorSourceTests.test_palette_entries_are_valid_hex_pairs",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.MentorColorSourceTests.test_python_hash_matches_shared_vectors",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.MentorColorSourceTests.test_python_hash_replicates_javascript_semantics",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.PermissionContractTests.test_admin_user_can_modify_operational_data",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.PermissionContractTests.test_regular_user_can_read_reference_data_and_schedule_state",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.PermissionContractTests.test_regular_user_cannot_modify_operational_data",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.RealDocumentSmokeTests.test_all_real_documents_import_end_to_end",
+      "status": "skipped",
+      "reason": "真实答辩文档目录不存在，跳过冒烟验证"
+    },
+    {
+      "id": "api.tests.RealDocumentSmokeTests.test_full_real_data_schedule_pipeline",
+      "status": "skipped",
+      "reason": "真实答辩文档目录不存在，跳过冒烟验证"
+    },
+    {
+      "id": "api.tests.ScheduleConflictContractTests.test_generate_assigns_chair_when_need_chair_rule_sent",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleConflictContractTests.test_generate_normalizes_mentor_avoidance_alias",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleConflictContractTests.test_generate_persists_and_returns_frontend_shaped_conflicts",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_action_rejects_invalid_time_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_action_rejects_missing_chair_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_action_rejects_missing_expert_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_action_rejects_missing_room_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_action_rejects_missing_secretary_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_action_rejects_missing_student_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_group_rejects_invalid_time_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_adjust_group_rejects_unknown_references_without_partial_update",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_check_conflicts_allows_bound_secretary_but_flags_mentor_as_secretary",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_frontend_adjust_and_export_aliases_are_supported",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_generate_notices_when_mentor_name_unmatched_or_filtered",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_schedule_generate_current_conflict_check_and_export_use_current_models",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleContractTests.test_schedule_generation_maps_frontend_model_fields_for_constraints",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleExportColorTests.test_excel_export_uses_mentor_font_colors",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleExportColorTests.test_word_export_colors_students_with_their_mentors",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleRuleEffectTests.test_expert_shortage_downgrades_to_warning_when_min_met",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleRuleEffectTests.test_expert_shortage_stays_error_below_min",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleRuleEffectTests.test_prefer_senior_picks_highest_title_expert",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleRuleEffectTests.test_secretary_title_threshold_allows_qualified",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleRuleEffectTests.test_secretary_title_threshold_blocks_low_rank",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleTypeFilterTests.test_generate_rejects_when_no_students_match_defense_type",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleTypeFilterTests.test_generate_rejects_when_no_teachers_match_defense_type",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleTypeFilterTests.test_student_without_defense_types_skipped_with_notice",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleTypeFilterTests.test_students_filtered_by_defense_type",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.ScheduleTypeFilterTests.test_teachers_filtered_by_available_types",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SoftWeightTests.test_academic_master_weight_gives_master_groups_earlier_slots",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SoftWeightTests.test_cross_campus_weight_defers_teachers_already_elsewhere",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SoftWeightTests.test_low_balance_weight_fills_groups_to_max",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_avoid_policy_keeps_supervisors_out",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_bound_secretary_rejected_when_supervising_group_students",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_exclude_dates_filters_room_available_slots",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_exclude_dates_skips_configured_holidays",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_same_group_policy_places_supervisors_with_students",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_secretary_follows_students_previous_binding",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_secretary_grouping_reuses_previous_groups",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.SupervisorPolicyTests.test_supervisor_grouping_keeps_same_mentor_students_together",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimeToleranceAndTimezoneTests.test_fullwidth_and_slash_time_formats_are_normalized",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimeToleranceAndTimezoneTests.test_generated_at_uses_local_timezone",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimeToleranceAndTimezoneTests.test_recurring_time_outside_range_is_silently_ignored",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimeToleranceAndTimezoneTests.test_room_anytime_means_no_restriction_without_notice",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimeToleranceAndTimezoneTests.test_room_invalid_time_is_unavailable_with_notice",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimeToleranceAndTimezoneTests.test_unparseable_time_excludes_teacher_with_notice",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimetableImportTests.test_matrix_timetable_import_expands_teacher_busy_times",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimetableImportTests.test_roster_timetable_import_parses_time_location_text",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimetableImportTests.test_timetable_import_is_idempotent",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimetableImportTests.test_timetable_import_rejects_non_monday_semester_start",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimetableImportTests.test_timetable_import_requires_semester_start_date",
+      "status": "passed"
+    },
+    {
+      "id": "api.tests.TimetableImportTests.test_timetable_import_skips_unknown_teachers_and_keeps_existing_times",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.InitialAdminTests.test_initial_admin_is_created_when_database_has_no_users",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.InitialAdminTests.test_initial_admin_is_not_created_when_users_already_exist",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CampusStartDatesV2Tests.test_invalid_campus_dates_are_rejected_before_scheduling",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CampusStartDatesV2Tests.test_manual_time_before_campus_start_is_reported",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CampusStartDatesV2Tests.test_two_campuses_can_start_on_different_dates",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CampusStartDatesV2Tests.test_unspecified_campus_keeps_global_start_date",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_additional_required_mentors_choose_a_large_enough_room",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_bound_secretary_is_reserved_before_member_selection",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_chair_only_teacher_is_not_ordinary_member",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_each_distinct_lost_secretary_binding_is_reported",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_formal_has_exactly_five_reviewers_including_chair",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_formal_manual_edit_cannot_exceed_five_reviewers",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_formal_preserves_previous_group_label",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_formal_requires_software_college_majority",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_generation_prefers_software_college_reviewers",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_inactive_teacher_is_never_automatically_assigned",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_legacy_expert_count_keeps_ordinary_expert_semantics",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_member_exclusion_is_detected_after_manual_edit",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_mid_student_count_is_checked_with_v2_bounds",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_minority_secretary_binding_is_not_hidden_by_majority",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_pre_chair_is_one_of_four_experts",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_role_qualification_is_detected_after_manual_edit",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.CommitteeV2Tests.test_shortage_remains_an_explicit_draft_conflict",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalMentorSessionV2Tests.test_generation_aligns_two_groups_and_rotates_their_mentors",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalMentorSessionV2Tests.test_mentor_and_student_at_different_sessions_is_a_hard_conflict",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.FormalMentorSessionV2Tests.test_mentor_reviews_another_group_while_own_student_attends",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.LinkedResourcePlanningV2Tests.test_explicit_replanning_refreshes_a_shared_old_secretary",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.LinkedResourcePlanningV2Tests.test_less_senior_external_mentor_still_gets_a_formal_review_seat",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.LinkedResourcePlanningV2Tests.test_twelve_students_keep_secretaries_and_mentors_in_one_formal_session",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.ScenarioPolicyV2Tests.test_catalog_scenarios_do_not_share_mutable_configuration",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.ScenarioPolicyV2Tests.test_chair_in_member_list_counts_once_and_uses_chair_qualification",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.ScenarioPolicyV2Tests.test_inactive_camel_case_teacher_and_member_flag_are_respected",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.ScenarioPolicyV2Tests.test_software_flag_adds_to_internal_college_inference",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.SchedulingPreferencesV2Tests.test_disabled_external_preference_keeps_first_feasible_room_slot",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.SchedulingPreferencesV2Tests.test_disabled_software_balance_keeps_stable_candidate_order",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.SchedulingPreferencesV2Tests.test_external_mentor_prefers_two_feasible_sessions_on_one_day",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.SchedulingPreferencesV2Tests.test_external_preference_never_overrides_staff_availability",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_algorithm_v2.SchedulingPreferencesV2Tests.test_software_reviewers_rotate_with_at_most_one_count_difference",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.SchedulePolicyBoundaryTests.test_api_cannot_lower_v2_hard_constraints",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.SchedulePolicyBoundaryTests.test_course_blocks_whole_half_day_and_preserves_day_boundaries",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_architecture_v2.SchedulePolicyBoundaryTests.test_server_source_reference_cannot_be_supplied_by_client",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.SchedulingFeasibilityTests.test_explicit_empty_availability_is_not_unlimited",
+      "status": "passed"
+    },
+    {
+      "id": "api.test_stability.SchedulingFeasibilityTests.test_tries_another_slot_when_teachers_are_busy",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.test_operations.OperationalSafetyTests.test_backup_restores_committed_data_and_passes_integrity_check",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.test_operations.OperationalSafetyTests.test_env_loading_preserves_explicit_environment_and_literal_values",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.DesktopLauncherTests.test_browser_launch_can_be_disabled_for_smoke_tests",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.DesktopLauncherTests.test_packaged_entrypoint_reuses_desktop_launcher_main",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.DesktopLauncherTests.test_select_listen_port_falls_back_when_preferred_port_is_busy",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.FrontendServingTests.test_assets_are_served_from_built_frontend_dist",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.FrontendServingTests.test_public_favicon_is_served_from_built_frontend_dist",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.FrontendServingTests.test_root_serves_built_frontend_index",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.LocalRuntimeConfigTests.test_configure_local_runtime_uses_persistent_app_data_directory",
+      "status": "passed"
+    },
+    {
+      "id": "defense_scheduler.tests.LocalRuntimeConfigTests.test_existing_secret_key_is_reused_across_restarts",
+      "status": "passed"
+    }
+  ],
+  "counts": {
+    "passed": 241,
+    "skipped": 2,
+    "failed": 0,
+    "error": 0
+  }
+}

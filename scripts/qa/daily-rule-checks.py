@@ -16,7 +16,9 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-OUT = ROOT / '.tmp' / 'testing-2026-10-13'
+OUT = (ROOT / os.environ.get('QA_OUTPUT_DIR', '.tmp/testing-' + datetime.now(ZoneInfo('Asia/Shanghai')).strftime('%Y-%m-%d'))).resolve()
+if not OUT.is_relative_to((ROOT / '.tmp').resolve()):
+    raise ValueError('QA_OUTPUT_DIR must stay inside project .tmp')
 OUT.mkdir(parents=True, exist_ok=True)
 os.environ.update(DJANGO_SETTINGS_MODULE='defense_scheduler.settings', DJANGO_ENV='local',
     DJANGO_DB_PATH=str(OUT / 'daily.sqlite3'), DJANGO_SECRET_KEY='isolated-daily-qa-only-' * 4)
@@ -327,7 +329,7 @@ def main():
         ('QUALITY-formula','P09','评分公式与缺数据分母未获确认')]:
         if not selected:
             cases.append(dict(id=case_id, task=task, status='blocked', expected=reason, actual='不自行制定标准'))
-    report = dict(date='2026-10-13', timezone='Asia/Shanghai', recorded_at=datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(),
+    report = dict(date=datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat(), timezone='Asia/Shanghai', recorded_at=datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(),
         commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(), branch=subprocess.check_output(['git','branch','--show-current'],text=True).strip(),
         scope='真实Django/DRF服务，隔离SQLite与APIClient测试认证；非浏览器验收', cases=cases,
         counts=dict(Counter(c['status'] for c in cases)), business_db_sha256_before=before,

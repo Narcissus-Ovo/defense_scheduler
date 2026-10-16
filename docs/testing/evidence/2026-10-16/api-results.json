@@ -1,0 +1,319 @@
+{
+  "executed_at": "2026-10-16T21:33:27.094530+08:00",
+  "planned_dates": [
+    "2026-10-14",
+    "2026-10-15"
+  ],
+  "scope": "真实DRF服务、隔离数据库；非浏览器或视觉验收",
+  "cases": [
+    {
+      "id": "FLOW-pre-创新港",
+      "prds": [
+        1,
+        4,
+        16,
+        17,
+        21,
+        25,
+        29,
+        36,
+        37
+      ],
+      "expected": "显式合法配置下生成、校验、发布、所选版本Excel/Word名单完整",
+      "status": "passed",
+      "actual": {
+        "groups": 2,
+        "campus": "创新港",
+        "export": {
+          "student_count": 12,
+          "roster_rows": 12,
+          "word_names_complete": true,
+          "excel_sha256": "075d701f7a43d296294cfcc7dd47e5bca2b0d17419576236a56e54b93b02705f",
+          "word_sha256": "93e1f162ba4c61a3f1f54ac89d349023a4af1a78e1e4dface5a40bfb1dfe1908"
+        }
+      }
+    },
+    {
+      "id": "FLOW-pre-兴庆",
+      "prds": [
+        1,
+        4,
+        16,
+        17,
+        21,
+        25,
+        29,
+        36,
+        37
+      ],
+      "expected": "显式合法配置下生成、校验、发布、所选版本Excel/Word名单完整",
+      "status": "passed",
+      "actual": {
+        "groups": 2,
+        "campus": "兴庆",
+        "export": {
+          "student_count": 12,
+          "roster_rows": 12,
+          "word_names_complete": true,
+          "excel_sha256": "3c5c7d11d78f0406f1fbe872b426c0b987859319a91debf4ae3984fd572cf25a",
+          "word_sha256": "a20482c249a05298e861bb98ab53708e228cbfd6e5534dde5154855d94951803"
+        }
+      }
+    },
+    {
+      "id": "FLOW-formal-创新港",
+      "prds": [
+        1,
+        4,
+        16,
+        17,
+        21,
+        25,
+        29,
+        36,
+        37
+      ],
+      "expected": "显式合法配置下生成、校验、发布、所选版本Excel/Word名单完整",
+      "status": "passed",
+      "actual": {
+        "groups": 2,
+        "campus": "创新港",
+        "export": {
+          "student_count": 12,
+          "roster_rows": 12,
+          "word_names_complete": true,
+          "excel_sha256": "4a7cdc06c54f1dfe127dce924fb622ada3c08af4c670edb97433d60a5bb3fd9a",
+          "word_sha256": "f59f133d2d1ab7734a9681a1344a012459429ae990948c5c85008875a93db6b5"
+        }
+      }
+    },
+    {
+      "id": "FLOW-formal-兴庆",
+      "prds": [
+        1,
+        4,
+        16,
+        17,
+        21,
+        25,
+        29,
+        36,
+        37
+      ],
+      "expected": "显式合法配置下生成、校验、发布、所选版本Excel/Word名单完整",
+      "status": "passed",
+      "actual": {
+        "groups": 2,
+        "campus": "兴庆",
+        "export": {
+          "student_count": 12,
+          "roster_rows": 12,
+          "word_names_complete": true,
+          "excel_sha256": "d367853e66e153bc57446aa211f54e1193caae8ff0f5093d5909edca3d315f3b",
+          "word_sha256": "e938be8bafa24393da8d5c61a3818f1854361c1a9791fe6a52aeca0160b81777"
+        }
+      }
+    },
+    {
+      "id": "FLOW-mid-创新港",
+      "prds": [
+        1,
+        4,
+        16,
+        17,
+        21,
+        25,
+        29,
+        36,
+        37
+      ],
+      "expected": "显式合法配置下生成、校验、发布、所选版本Excel/Word名单完整",
+      "status": "passed",
+      "actual": {
+        "groups": 1,
+        "campus": "创新港",
+        "export": {
+          "student_count": 12,
+          "roster_rows": 12,
+          "word_names_complete": true,
+          "excel_sha256": "955f0d2806706d25ce8b63e82fa273c5cecdabc28ce1432b255efee4f8f93614",
+          "word_sha256": "a032901215ce0c4f732a932ccd157feddad87500337207a44bf201d7a35e7c44"
+        }
+      }
+    },
+    {
+      "id": "FLOW-mid-兴庆",
+      "prds": [
+        1,
+        4,
+        16,
+        17,
+        21,
+        25,
+        29,
+        36,
+        37
+      ],
+      "expected": "显式合法配置下生成、校验、发布、所选版本Excel/Word名单完整",
+      "status": "passed",
+      "actual": {
+        "groups": 1,
+        "campus": "兴庆",
+        "export": {
+          "student_count": 12,
+          "roster_rows": 12,
+          "word_names_complete": true,
+          "excel_sha256": "ae486e8314b4361ccd866ff8d3dfb4d326db4b5c156c8390c645695ab3b2388f",
+          "word_sha256": "3e511e2a03cd97d53a4643704c67ce1a4464edef4cfb4c62257549242e506b21"
+        }
+      }
+    },
+    {
+      "id": "LIFECYCLE",
+      "prds": [
+        3,
+        28,
+        31,
+        33,
+        34,
+        36
+      ],
+      "expected": "幂等、并发拒绝、权限、审计、冻结与普通用户上一发布版",
+      "status": "passed",
+      "actual": {
+        "missing_revision": 428,
+        "stale_revision": 409,
+        "reader_write": 403,
+        "history_frozen": true,
+        "reader_sees_last_published": true,
+        "audit_authoritative": true
+      }
+    },
+    {
+      "id": "LINKED-MOVE",
+      "prds": [
+        21,
+        22,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34
+      ],
+      "expected": "联排来源/学生秘书沿用、默认保留、显式改绑、自动重验",
+      "status": "passed",
+      "actual": {
+        "group_secretary_inheritance": true,
+        "default_secretary_preserved": true,
+        "explicit_rebind_and_recheck": true,
+        "authoritative_actor_time_source_target_relationship_audit": true
+      }
+    },
+    {
+      "id": "BASE-FIELDS",
+      "prds": [
+        2,
+        3,
+        6
+      ],
+      "expected": "录入/读取/改名/停用/删除及全部资料字段持久化",
+      "status": "passed",
+      "actual": {
+        "all_teacher_fields_persisted": true,
+        "student_fields_and_stable_relations": true,
+        "renamed_reference_synced": true,
+        "disable_and_delete": true
+      }
+    },
+    {
+      "id": "ROOM-CAPACITY",
+      "prds": [
+        4,
+        17,
+        25
+      ],
+      "expected": "教室唯一性按校区+名称，容量不足形成错误并禁止发布",
+      "status": "passed",
+      "actual": {
+        "same_campus_duplicate": 400,
+        "cross_campus_duplicate_name_allowed": 201,
+        "capacity_blocks_publish": true
+      }
+    },
+    {
+      "id": "CALENDAR",
+      "prds": [
+        9
+      ],
+      "expected": "日期配置保存读取、周末开关、手工节假日影响真实生成",
+      "status": "passed",
+      "actual": {
+        "saved_and_read_back": true,
+        "weekend_and_holiday_skipped": true,
+        "weekend_off_effective": true
+      }
+    },
+    {
+      "id": "OVERLAP",
+      "prds": [
+        16,
+        25,
+        30,
+        31,
+        33
+      ],
+      "expected": "修改时段制造重叠，自动检测人员/教室并拒绝发布",
+      "status": "passed",
+      "actual": {
+        "time_adjust_saved": true,
+        "automatic_time_or_room_conflict": true,
+        "publish_blocked": true
+      }
+    },
+    {
+      "id": "ADJUST-FIELDS",
+      "prds": [
+        21,
+        31,
+        32,
+        33,
+        34
+      ],
+      "expected": "实际更换专家/组长/秘书/校区/教室/时段后保持关系并可发布",
+      "status": "passed",
+      "actual": {
+        "expert_chair_secretary_room_campus_time_updated": true,
+        "mentor_kept_in_committee": true,
+        "published": true
+      }
+    },
+    {
+      "id": "EXPORT-SEMANTICS",
+      "prds": [
+        15,
+        36,
+        37,
+        38,
+        39,
+        42
+      ],
+      "expected": "所选版本、备注快照、隐藏备注、长文本、实际Excel错误标红",
+      "status": "passed",
+      "actual": {
+        "student_count": 12,
+        "roster_rows": 12,
+        "word_names_complete": true,
+        "excel_sha256": "7ee8f12f1dac0e6edcc9c33ad5f43bfdc294844a2a3a2d9eebbfc48deab347e7",
+        "word_sha256": "8654691b1fe7cdc0890559f1884e6566506b77408dc284b005930e6b24ac88b1",
+        "old_snapshot_remarks_preserved": true,
+        "new_remarks_hidden": true,
+        "error_red_cells": 240
+      }
+    }
+  ],
+  "counts": {
+    "passed": 14,
+    "failed": 0
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "executed_at": "2026-10-16T13:36:11.985Z",
+  "planned_dates": [
+    "2026-10-14",
+    "2026-10-15"
+  ],
+  "browser": "Edge 155.0.4283.45",
+  "playwright": "1.62.1",
+  "scope": "真实HTTP服务与浏览器，无route mock；显式合法5人预配置，不代表默认新规则通过",
+  "cases": [
+    {
+      "id": "UI-LOGIN",
+      "prds": [
+        1
+      ],
+      "expected": "真实登录表单进入工作台",
+      "status": "passed",
+      "actual": {
+        "url": "/dashboard"
+      }
+    },
+    {
+      "id": "UI-DATA",
+      "prds": [
+        2,
+        3,
+        4
+      ],
+      "expected": "教师/学生/教室页面真实API及表单可用",
+      "status": "passed",
+      "actual": {
+        "pages": 3
+      }
+    },
+    {
+      "id": "UI-POLICY",
+      "prds": [
+        8,
+        18
+      ],
+      "expected": "显式保存的预5与正式5配置可见",
+      "status": "passed",
+      "actual": {
+        "formal": 5,
+        "note": "预默认4的新规则缺陷另记；本fixture显式设置5"
+      }
+    },
+    {
+      "id": "UI-GENERATE-PUBLISH",
+      "prds": [
+        1,
+        17,
+        18,
+        33
+      ],
+      "expected": "浏览器生成显式5人预草稿并发布",
+      "status": "passed",
+      "actual": {
+        "version": 1,
+        "committees": [
+          5,
+          5
+        ]
+      }
+    },
+    {
+      "id": "UI-LINKED",
+      "prds": [
+        21,
+        27,
+        28
+      ],
+      "expected": "联合生成与师生回避同场、学生秘书沿用",
+      "status": "passed",
+      "actual": {
+        "groups": 2,
+        "source": 2
+      }
+    },
+    {
+      "id": "UI-ADJUST",
+      "prds": [
+        31,
+        33,
+        34
+      ],
+      "expected": "实际调整抽屉修改组名、保存自动重验，再恢复组名",
+      "status": "passed",
+      "actual": {
+        "saved": true,
+        "restored": true,
+        "revision": 2
+      }
+    },
+    {
+      "id": "UI-MOVE",
+      "prds": [
+        28,
+        31,
+        32,
+        33,
+        34
+      ],
+      "expected": "浏览器默认保留秘书移动并显式改绑恢复",
+      "status": "passed",
+      "actual": {
+        "default_retained": true,
+        "explicit_rebound": true
+      }
+    },
+    {
+      "id": "UI-MID",
+      "prds": [
+        1,
+        10,
+        29
+      ],
+      "expected": "中期独立生成、发布及内容显示",
+      "status": "passed",
+      "actual": {
+        "students": 12
+      }
+    },
+    {
+      "id": "UI-HISTORY-PDF",
+      "prds": [
+        15,
+        36,
+        38,
+        42
+      ],
+      "expected": "历史版本打印预览与长备注PDF实际生成",
+      "status": "passed",
+      "actual": {
+        "version": 1,
+        "groups": 2,
+        "pdf": "history-long.pdf"
+      }
+    },
+    {
+      "id": "UI-HISTORY-REMARKS",
+      "prds": [
+        15,
+        38
+      ],
+      "expected": "改变当前配置不影响旧版PDF备注",
+      "status": "failed",
+      "error": "expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false"
+    },
+    {
+      "id": "UI-NAVIGATION",
+      "prds": [],
+      "expected": "新三类一级导航及独立基础数据入口已实现（UX-001/002）",
+      "status": "failed",
+      "error": "expect(received).toContain(expected) // indexOf\n\nExpected substring: \"基础数据\"\nReceived string:    \"答辩安排助手\n工作台 · 从这里开始\n分步安排向导\n完整管理\n安排要求\n答辩安排与导出\n资料管理\n教师/专家管理\n学生管理\n教室管理\n其他工具\n操作日志\""
+    },
+    {
+      "id": "UI-MOBILE",
+      "prds": [
+        42
+      ],
+      "expected": "390px向导无横向溢出且刷新保留类型",
+      "status": "passed",
+      "actual": {
+        "viewport": 390
+      }
+    },
+    {
+      "id": "UI-THEME",
+      "prds": [
+        41
+      ],
+      "expected": "三类模块与公共资料使用规定主题色",
+      "status": "failed",
+      "error": "expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false"
+    },
+    {
+      "id": "UI-READER",
+      "prds": [
+        1
+      ],
+      "expected": "普通用户独立浏览器上下文登录、受限写403、退出撤销Token",
+      "status": "passed",
+      "actual": {
+        "write": 403,
+        "revoked": 401,
+        "independent_context": true
+      }
+    }
+  ],
+  "counts": {
+    "passed": 11,
+    "failed": 3
+  },
+  "page_errors": []
+}

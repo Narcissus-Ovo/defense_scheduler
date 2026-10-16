@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "prd_rows": 42,
+  "prd_counts": {
+    "部分通过": 3,
+    "通过": 21,
+    "失败": 16,
+    "阻塞": 2
+  },
+  "test_counts": {
+    "daily-results": {
+      "failed": 17,
+      "passed": 26,
+      "blocked": 3
+    },
+    "backend-cases": {
+      "passed": 241,
+      "skipped": 2
+    },
+    "api-results": {
+      "passed": 14
+    },
+    "browser-results": {
+      "passed": 11,
+      "failed": 3
+    }
+  },
+  "office_input_hashes_match": true,
+  "api_export_hashes_match": true,
+  "package_hashes_and_contents_match": true,
+  "business_source_unchanged": true,
+  "prior_evidence_unchanged": true,
+  "shared_evidence_has_no_db_or_credentials": true,
+  "note": "QA evidence consistency only; requirement acceptance is failed/blocked as documented"
+}

@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-16T21:02:25.822095+08:00",
+  "branch": "feat/testing",
+  "commit": "a426761e85dc5200732f34f8ef317567f6f68c90",
+  "python": "3.12.14",
+  "node": "v24.13.1",
+  "checks": [
+    {
+      "check": "lint",
+      "command": [
+        "node_modules/eslint/bin/eslint.js",
+        ".",
+        "--ext",
+        ".ts,.vue"
+      ],
+      "returncode": 0,
+      "seconds": 3.109
+    },
+    {
+      "check": "domain",
+      "command": [
+        "scripts/test-frontend-domain.cjs"
+      ],
+      "returncode": 0,
+      "seconds": 0.422
+    },
+    {
+      "check": "types",
+      "command": [
+        "node_modules/vue-tsc/bin/vue-tsc.js",
+        "-b"
+      ],
+      "returncode": 0,
+      "seconds": 0.25
+    },
+    {
+      "check": "build",
+      "command": [
+        "node_modules/vite/bin/vite.js",
+        "build"
+      ],
+      "returncode": 0,
+      "seconds": 7.547
+    },
+    {
+      "check": "django",
+      "command": [
+        "manage.py",
+        "check"
+      ],
+      "returncode": 0,
+      "seconds": 0.75
+    },
+    {
+      "check": "migrations",
+      "command": [
+        "manage.py",
+        "makemigrations",
+        "--check",
+        "--dry-run"
+      ],
+      "returncode": 0,
+      "seconds": 0.562
+    },
+    {
+      "check": "backend",
+      "command": [
+        "manage.py",
+        "test",
+        "api",
+        "defense_scheduler",
+        "--noinput"
+      ],
+      "returncode": 0,
+      "seconds": 45.516
+    }
+  ],
+  "business_database_unchanged": true,
+  "note": "Probe exit 0 means observations were collected; inspect meets_new_expectation, not a requirement pass."
+}
