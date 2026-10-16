@@ -44,10 +44,10 @@ def _format_time_label(raw):
         return raw
 
 
-def _label_cell(cell, text):
-    """结构标签：加粗黑色，不再使用红色。"""
+def _label_cell(cell, text, color=None):
+    """写入加粗结构标签，可按冲突级别着色。"""
     paragraph = cell.paragraphs[0]
-    _styled_run(paragraph, text, bold=True)
+    _styled_run(paragraph, text, color=color, bold=True)
 
 
 def _names_with_colors(cell, names_with_color, separator='、'):
@@ -59,10 +59,11 @@ def _names_with_colors(cell, names_with_color, separator='、'):
         _styled_run(paragraph, name, color=color)
 
 
-def export_schedule_word(schedule_version, defense_label):
+def export_schedule_word(schedule_version, defense_label, include_remarks=True, conflicts=None):
     """生成 Word 时间安排表文档对象；调用方负责写入响应。"""
     groups = list(export_groups(schedule_version))
     color_map = build_mentor_color_map(groups)
+    conflicts = conflicts or []
     student_total = sum(len(group.students.all()) for group in groups)
     chair_label = '主席' if schedule_version.defense_type == 'formal' else '组长'
 
@@ -88,9 +89,13 @@ def export_schedule_word(schedule_version, defense_label):
             group.students.all(),
             key=lambda s: ((s.mentor_name or ''), s.id),
         )
+        related_conflicts = [conflict for conflict in conflicts
+            if group.id in (conflict.get('relatedGroupIds') or [])
+            or not conflict.get('relatedGroupIds')]
+        has_errors = any(conflict.get('level') == 'error' for conflict in related_conflicts)
 
         header_row = table.add_row()
-        _label_cell(header_row.cells[0], f'第{index}组')
+        _label_cell(header_row.cells[0], f'第{index}组', 'C00000' if has_errors else None)
 
         time_row = table.add_row()
         _label_cell(time_row.cells[0], '时间')
@@ -122,14 +127,22 @@ def export_schedule_word(schedule_version, defense_label):
             _styled_run(secretary_row.cells[1].paragraphs[0], group.secretary.name)
 
         student_row = table.add_row()
-        _label_cell(student_row.cells[0], '学生')
-        _names_with_colors(
-            student_row.cells[1],
-            [
-                (student.name, color_map.get((student.mentor_name or '').strip()))
-                for student in students
-            ],
-        )
+        _label_cell(student_row.cells[0], '学生名单')
+        for student_index, student in enumerate(students):
+            paragraph = student_row.cells[1].paragraphs[0] if student_index == 0 else student_row.cells[1].add_paragraph()
+            student_color = color_map.get((student.mentor_name or '').strip())
+            _styled_run(paragraph, f'{student.student_no or ""} ')
+            _styled_run(paragraph, student.name, color=student_color)
+            _styled_run(paragraph, f'（{student.student_type}；导师：')
+            _styled_run(paragraph, student.mentor_name or '未分配', color=student_color)
+            _styled_run(paragraph, f'；秘书：{student.secretary_name or "未分配"}')
+            if include_remarks and student.remark:
+                _styled_run(paragraph, f'；备注：{student.remark}')
+        for conflict in related_conflicts:
+            conflict_row = table.add_row()
+            color = 'C00000' if conflict.get('level') == 'error' else None
+            _label_cell(conflict_row.cells[0], conflict.get('type') or '校验结果', color)
+            _styled_run(conflict_row.cells[1].paragraphs[0], conflict.get('reason') or '', color=color)
 
     # 统一列宽：标签列窄、内容列宽（python-docx 需要逐单元格设置才稳定生效）
     for row in table.rows:

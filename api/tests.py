@@ -172,7 +172,7 @@ class IntegrationContractTests(TestCase):
         self.assertEqual(response.data['defenseType'], '预答辩')
         self.assertIn('studentCount', response.data)
         self.assertEqual(response.data['endDate'], (timezone.localdate() + timedelta(days=10)).isoformat())
-        self.assertEqual(response.data['expertCount']['target'], 4)
+        self.assertEqual(response.data['expertCount']['target'], 5)
         self.assertEqual(response.data['policyVersion'], 2)
         self.assertFalse(response.data['mentorAvoidance'])
 

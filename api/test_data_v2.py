@@ -144,7 +144,7 @@ class RuleDefaultsV2Tests(TestCase):
     def test_each_scenario_matches_documented_counts_and_today(self):
         today = date(2026, 10, 2)
         with patch('api.serializers.timezone.localdate', return_value=today):
-            for kind, target, minimum, maximum, expert in (('pre', 6, 4, 8, 4), ('formal', 6, 4, 8, 5), ('mid', 12, 10, 13, 5)):
+            for kind, target, minimum, maximum, expert in (('pre', 6, 4, 8, 5), ('formal', 6, 4, 8, 5), ('mid', 12, 10, 13, 5)):
                 config = default_rule_config(kind)
                 self.assertEqual(config['studentCount'], {'target': target, 'min': minimum, 'max': maximum})
                 self.assertEqual(config['expertCount']['target'], expert)
@@ -188,6 +188,15 @@ class RuleDefaultsV2Tests(TestCase):
 
 
 class DataMigrationV2Tests(TestCase):
+    def test_pre_rule_migration_fixes_existing_committee_headcount(self):
+        row = RuleConfig.objects.create(defense_type='pre', config={
+            'policyVersion': 2, 'expertCountIncludesChair': True,
+            'expertCount': {'target': 4, 'min': 4, 'max': None, 'includesChair': True}})
+        migration = import_module('api.migrations.0010_pre_committee_headcount')
+        migration.fix_pre_committee_headcount(apps, SimpleNamespace(connection=connection))
+        row.refresh_from_db()
+        self.assertEqual(row.config['expertCount'], {'target': 5, 'min': 5, 'max': 5, 'includesChair': True})
+
     def test_migration_matches_exact_names_and_leaves_ambiguous_normalization_unresolved(self):
         teacher = Teacher.objects.create(name='导师甲', title='教授')
         Teacher.objects.create(name=' 导师甲', title='教授')

@@ -3,7 +3,14 @@ export interface SoftConstraintScore {
   label: string
   score: number
   maxScore: number
+  weight: number
   description: string
+}
+
+export interface UnassessedSoftConstraint {
+  key: string
+  label: string
+  reason: string
 }
 
 export interface OptimizationSuggestion {
@@ -19,6 +26,7 @@ export interface OptimizationSummary {
   totalScore: number
   maxScore: number
   scores: SoftConstraintScore[]
+  unassessed: UnassessedSoftConstraint[]
   suggestions: OptimizationSuggestion[]
   generatedAt: string
 }

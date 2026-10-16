@@ -3,7 +3,7 @@ import sharedPolicy from '../../shared/defense-policy.json'
 export const defenseTypes = ['预答辩', '正式答辩', '中期答辩'] as const
 export type DefenseType = typeof defenseTypes[number]
 export type BackendDefenseType = 'pre' | 'formal' | 'mid'
-export type TeacherTitle = '教授' | '副教授' | '讲师' | '其他'
+export type TeacherTitle = '教授' | '研究员' | '副教授' | '副研究员' | '讲师' | '助教' | '其他'
 
 const backendTypes: Record<DefenseType, BackendDefenseType> = {
   '预答辩': 'pre', '正式答辩': 'formal', '中期答辩': 'mid'

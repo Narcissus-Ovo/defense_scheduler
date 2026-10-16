@@ -194,9 +194,20 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
 
     def _version_result(self, schedule_version):
         if schedule_version.result_snapshot:
-            return {**schedule_version.result_snapshot, 'status': schedule_version.status, 'revision': schedule_version.revision, 'isCurrent': schedule_version.is_current}
+            result = {**schedule_version.result_snapshot}
+            teacher_snapshot = {str(teacher.get('id')): teacher
+                               for teacher in schedule_version.input_snapshot.get('teachers', [])}
+            result['groups'] = [{**group, 'students': [
+                {**student, 'mentorIsExternal': student.get('mentorIsExternal',
+                    teacher_snapshot.get(str(student.get('mentorId')), {}).get('is_external'))}
+                for student in group.get('students', [])
+            ]} for group in result.get('groups', [])]
+            result.setdefault('rules', schedule_version.rules_snapshot)
+            return {**result, 'status': schedule_version.status, 'revision': schedule_version.revision, 'isCurrent': schedule_version.is_current}
         groups = export_groups(schedule_version)
         formatted_groups = []
+        teacher_external_by_id = dict(Teacher.objects.values_list('id', 'is_external'))
+        teacher_external_by_name = dict(Teacher.objects.values_list('name', 'is_external'))
         for group in groups:
             time_parts = group.time.split(' ')
             date = time_parts[0] if len(time_parts) > 0 else ''
@@ -219,20 +230,8 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                     {'id': t.id, 'name': t.name, 'title': t.title, 'roles': getattr(t, 'roles', []), 'isExternal': t.is_external}
                     for t in group.experts.all()
                 ],
-                'students': [
-                    {
-                        'id': s.id,
-                        'name': s.name,
-                        'studentType': s.student_type,
-                        'mentorName': s.mentor.name if getattr(s, 'mentor_id', None) and hasattr(s, 'mentor') else s.mentor_name,
-                        'mentorId': getattr(s, 'mentor_id', None),
-                        'secretaryId': getattr(s, 'bound_secretary_id', None),
-                        'secretaryName': s.bound_secretary.name if getattr(s, 'bound_secretary_id', None) and hasattr(s, 'bound_secretary') else s.secretary_name,
-                        'studentNo': s.student_no,
-                        'remark': s.remark,
-                    }
-                    for s in group.students.all()
-                ]
+                'students': [self._student_schedule_payload(s, teacher_external_by_id, teacher_external_by_name)
+                             for s in group.students.all()]
             })
 
         return {
@@ -247,6 +246,27 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
             'generatedAt': timezone.localtime(schedule_version.created_at).strftime('%Y-%m-%d %H:%M'),
             'groups': formatted_groups,
             'conflicts': self._format_conflicts(schedule_version, self._check_conflicts(schedule_version))
+        }
+
+    @staticmethod
+    def _student_schedule_payload(student, teacher_external_by_id, teacher_external_by_name):
+        mentor_id = getattr(student, 'mentor_id', None)
+        mentor_name = student.mentor.name if mentor_id and hasattr(student, 'mentor') else student.mentor_name
+        if mentor_id in teacher_external_by_id:
+            mentor_is_external = teacher_external_by_id[mentor_id]
+        else:
+            mentor_is_external = teacher_external_by_name.get(mentor_name) if mentor_name else None
+        return {
+            'id': student.id,
+            'name': student.name,
+            'studentType': student.student_type,
+            'mentorName': mentor_name,
+            'mentorId': mentor_id,
+            'mentorIsExternal': mentor_is_external,
+            'secretaryId': getattr(student, 'bound_secretary_id', None),
+            'secretaryName': student.bound_secretary.name if getattr(student, 'bound_secretary_id', None) and hasattr(student, 'bound_secretary') else student.secretary_name,
+            'studentNo': student.student_no,
+            'remark': student.remark,
         }
 
     @action(detail=False, methods=['post'], url_path='adjust-group')
@@ -402,7 +422,10 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         from .export_word import export_schedule_word
 
         defense_label = DEFENSE_TYPE_LABELS.get(defense_type, defense_type)
-        doc = export_schedule_word(schedule_version, defense_label)
+        conflicts = self._format_conflicts(schedule_version, self._check_conflicts(schedule_version))
+        rules = schedule_version.rules_snapshot or {}
+        include_remarks = rules.get('include_remarks', rules.get('includeRemarks', True))
+        doc = export_schedule_word(schedule_version, defense_label, include_remarks, conflicts)
 
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'

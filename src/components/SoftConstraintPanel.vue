@@ -36,7 +36,7 @@
         <div v-for="item in summary.scores" :key="item.key" class="score-item">
           <div class="flex justify-between items-center mb-1">
             <span class="text-sm font-medium text-gray-700">{{ item.label }}</span>
-            <span class="text-xs font-bold text-gray-500">{{ item.score }} / {{ item.maxScore }}</span>
+            <span class="text-xs font-bold text-gray-500">权重 {{ item.weight }} · {{ item.score }} / {{ item.maxScore }}</span>
           </div>
           <el-progress 
             :percentage="Math.round((item.score / item.maxScore) * 100)" 
@@ -46,6 +46,13 @@
           />
           <p class="text-[10px] text-gray-400 mt-1">{{ item.description }}</p>
         </div>
+      </div>
+
+      <div v-if="summary.unassessed.length" class="space-y-2 border-t border-gray-100 pt-4">
+        <div class="text-sm font-bold text-gray-800">未评估</div>
+        <p v-for="item in summary.unassessed" :key="item.key" class="text-xs text-gray-500">
+          {{ item.label }}：{{ item.reason }}
+        </p>
       </div>
 
       <!-- 优化建议 -->

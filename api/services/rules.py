@@ -84,12 +84,14 @@ def normalize_schedule_rules(raw):
     rules['supervisor_policy'] = ('avoid' if avoidance else 'none') if defense_type == 'formal' else 'same_group'
     if defense_type == 'formal' and (rules['expert_count'] != 5 or rules['expert_min'] != 5):
         raise ValidationError('正式答辩必须配置 5 位专家（含主席）')
-    floor = 4 if defense_type == 'pre' else 5
+    floor = 5
     try:
         if any(isinstance(rules[k], bool) or not isinstance(rules[k], int) for k in (
             'expert_count', 'expert_min', 'group_min', 'group_size', 'group_max', 'formal_software_min')):
             raise ValueError
         if not floor <= rules['expert_min'] <= rules['expert_count']:
+            raise ValueError
+        if defense_type == 'pre' and (rules['expert_min'] != 5 or rules['expert_count'] != 5):
             raise ValueError
         if not 1 <= rules['group_min'] <= rules['group_size'] <= rules['group_max']:
             raise ValueError

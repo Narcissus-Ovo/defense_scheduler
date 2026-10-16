@@ -63,11 +63,11 @@
           <el-input-number v-model="form.studentCount.target" :min="1" controls-position="right" class="w-full" />
         </el-form-item>
         <el-form-item label="专家总人数">
-          <el-input-number v-model="form.expertCount.target" :min="expertMinimum" :max="form.defenseType === '正式答辩' ? 5 : undefined" :disabled="form.defenseType === '正式答辩'" controls-position="right" class="w-full" />
+          <el-input-number v-model="form.expertCount.target" :min="expertMinimum" :max="expertCountLocked ? 5 : undefined" :disabled="expertCountLocked" controls-position="right" class="w-full" />
         </el-form-item>
       </div>
       <p class="text-sm text-gray-600 mb-3">{{ expertGuidance }}；主席/组长计入专家总数，秘书单独 1 人。</p>
-      <el-popover placement="top" trigger="click" width="280"><template #reference><el-button link type="primary" size="small">查看人数范围</el-button></template><p>学生 {{ form.studentCount.min }}–{{ form.studentCount.max }} 人；专家至少 {{ form.expertCount.min }} 人；秘书 1 人。</p></el-popover>
+      <el-popover placement="top" trigger="click" width="280"><template #reference><el-button link type="primary" size="small">查看人数范围</el-button></template><p>学生 {{ form.studentCount.min }}–{{ form.studentCount.max }} 人；{{ expertGuidance }}；秘书 1 人。</p></el-popover>
     </el-card>
     <details class="secondary-details advanced-rules">
       <summary>更多要求 · 人数范围、角色资格与分组偏好</summary>
@@ -138,7 +138,7 @@
             </el-form-item>
 
             <el-form-item label="专家最少人数">
-              <el-input-number v-model="form.expertCount.min" :min="expertMinimum" :max="form.defenseType === '正式答辩' ? 5 : undefined" :disabled="form.defenseType === '正式答辩'" controls-position="right" class="w-full" />
+              <el-input-number v-model="form.expertCount.min" :min="expertMinimum" :max="expertCountLocked ? 5 : undefined" :disabled="expertCountLocked" controls-position="right" class="w-full" />
             </el-form-item>
             <el-form-item label="秘书人数">
               <el-input-number v-model="form.secretaryCount" :min="1" :max="1" disabled controls-position="right" class="w-full" />
@@ -159,7 +159,9 @@
               <el-form-item label="组长最低职称">
                 <el-select v-model="form.roleQualification.leaderMinTitle" style="width: 100%">
                   <el-option label="教授" value="教授" />
+                  <el-option label="研究员" value="研究员" />
                   <el-option label="副教授" value="副教授" />
+                  <el-option label="副研究员" value="副研究员" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -167,7 +169,9 @@
               <el-form-item label="主席最低职称">
                 <el-select v-model="form.roleQualification.chairmanMinTitle" disabled style="width: 100%">
                   <el-option label="教授" value="教授" />
+                  <el-option label="研究员" value="研究员" />
                   <el-option label="副教授" value="副教授" />
+                  <el-option label="副研究员" value="副研究员" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -175,7 +179,9 @@
               <el-form-item label="秘书最低职称">
                 <el-select v-model="form.roleQualification.secretaryMinTitle" style="width: 100%">
                   <el-option label="讲师" value="讲师" />
+                  <el-option label="副研究员" value="副研究员" />
                   <el-option label="教授" value="教授" />
+                  <el-option label="研究员" value="研究员" />
                   <el-option label="副教授" value="副教授" />
                 </el-select>
               </el-form-item>
@@ -257,8 +263,13 @@ const emit = defineEmits<{
 }>()
 
 const form = ref<RuleConfig>(normalizeRuleConfig(JSON.parse(JSON.stringify(props.modelValue))))
-const expertMinimum = computed(() => form.value.defenseType === '预答辩' ? 4 : 5)
-const expertGuidance = computed(() => form.value.defenseType === '正式答辩' ? '正式答辩固定 5 位专家（主席 1 位、组员 4 位）' : `${form.value.defenseType}至少 ${expertMinimum.value} 位专家`)
+const expertMinimum = 5
+const expertCountLocked = computed(() => form.value.defenseType !== '中期答辩')
+const expertGuidance = computed(() => form.value.defenseType === '正式答辩'
+  ? '正式答辩固定 5 位专家（主席 1 位、组员 4 位）'
+  : form.value.defenseType === '预答辩'
+    ? '预答辩固定 5 位专家（组长 1 位、普通专家 4 位）'
+    : '中期答辩至少 5 位专家')
 
 const disableEndDate = (date: Date) => {
   if (!form.value.startDate) return false

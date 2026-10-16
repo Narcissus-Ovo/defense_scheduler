@@ -132,7 +132,9 @@
         <el-form-item label="职称" prop="title">
           <el-select v-model="form.title" placeholder="请选择职称" style="width: 100%">
             <el-option label="教授" value="教授" />
+            <el-option label="研究员" value="研究员" />
             <el-option label="副教授" value="副教授" />
+            <el-option label="副研究员" value="副研究员" />
             <el-option label="讲师" value="讲师" />
             <el-option label="其他" value="其他" />
           </el-select>
