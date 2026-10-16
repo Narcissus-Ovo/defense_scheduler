@@ -1,0 +1,20 @@
+{
+  "executed_at": "2026-10-16T16:14:54.747Z",
+  "id": "UI-student-current-group",
+  "status": "failed",
+  "expected": "已在当前正式排期的学生不应全部显示未分组",
+  "actual": {
+    "assigned_students": 12,
+    "visible_rows": 10,
+    "visible_ungrouped": 10
+  },
+  "page_errors": [],
+  "browser": "155.0.4283.45",
+  "scope": "真实HTTP生产前端/Edge；合成库副本，实际表单登录，无route mock",
+  "quality_zero": {
+    "id": "UI-quality-zero",
+    "status": "passed",
+    "expected": "真实后端全零权重显示0/0，不出现NaN/Infinity",
+    "actual": "软约束优化评分\n生成时间：2026/10/17 00:14:54\n已评估指标得分\n0\n/ 0\n优化建议\n评分范围\n\n仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "executed_at": "2026-10-17T00:14:52.019614+08:00",
+  "qa_start_commit": "0e4d93dee59a1712c12dc03e64927101bf8cd742",
+  "scope": "真实DRF APIClient；只操作已核实QA合成库的一致性副本，不是浏览器",
+  "original_fixture_database_unchanged": true,
+  "business_database_unchanged": true,
+  "cases": [
+    {
+      "id": "GROUP-linked-source",
+      "status": "passed",
+      "expected": "正式沿用源预组序",
+      "actual": {
+        "pre_memberships": {
+          "1": "G1",
+          "2": "G1",
+          "3": "G1",
+          "4": "G1",
+          "5": "G1",
+          "6": "G1",
+          "7": "G2",
+          "8": "G2",
+          "9": "G2",
+          "10": "G2",
+          "11": "G2",
+          "12": "G2"
+        },
+        "formal_memberships": {
+          "1": "G1",
+          "2": "G1",
+          "3": "G1",
+          "4": "G1",
+          "5": "G1",
+          "6": "G1",
+          "7": "G2",
+          "8": "G2",
+          "9": "G2",
+          "10": "G2",
+          "11": "G2",
+          "12": "G2"
+        },
+        "source_pre_published": true
+      }
+    },
+    {
+      "id": "GROUP-move-source-stable",
+      "status": "passed",
+      "expected": "正式移动改变当前组且源预组不变",
+      "actual": {
+        "student_id": 1,
+        "source_pre_group": "G1",
+        "current_formal_group": "G2"
+      }
+    },
+    {
+      "id": "GROUP-student-current-field",
+      "status": "failed",
+      "expected": "真实学生列表/详情提供前端当前分组列可读取的currentGroup",
+      "actual": {
+        "list_has_currentGroup": false,
+        "detail": {
+          "id": 1,
+          "name": "QA学生001",
+          "studentNo": "QAACC001",
+          "gender": "",
+          "studentType": "学硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "campus": "创新港",
+          "defenseTypes": [
+            "预答辩",
+            "正式答辩",
+            "中期答辩"
+          ],
+          "secretaryName": "QA教师16",
+          "secretaryId": 16,
+          "remark": "QA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\n"
+        }
+      }
+    },
+    {
+      "id": "GROUP-student-pre-field",
+      "status": "partial",
+      "expected": "学生资料可读取预答辩组序，维护语义待A确认",
+      "actual": {
+        "detail_keys": [
+          "campus",
+          "defenseTypes",
+          "gender",
+          "id",
+          "mentorId",
+          "mentorName",
+          "name",
+          "remark",
+          "secretaryId",
+          "secretaryName",
+          "studentNo",
+          "studentType"
+        ],
+        "source_pre_group_readable_via_selected_schedule": true,
+        "dedicated_pre_group_field": false
+      }
+    }
+  ],
+  "counts": {
+    "passed": 2,
+    "failed": 1,
+    "partial": 1
+  }
+}

@@ -1,0 +1,348 @@
+{
+  "isCurrent": true,
+  "versionId": 4,
+  "sourcePreVersionId": 3,
+  "version": 1,
+  "revision": 1,
+  "status": "draft",
+  "rules": {
+    "defense_type": "formal",
+    "policy_version": 2,
+    "start_date": "2026-10-20",
+    "end_date": "2026-10-20",
+    "expert_count": 5,
+    "expert_min": 5,
+    "preserve_pre_defense_groups": true,
+    "formal_mentor_same_session": true,
+    "group_size": 6,
+    "group_min": 4,
+    "group_max": 8,
+    "avoid_weekend": true,
+    "avoid_holiday": true,
+    "exclude_dates": [],
+    "course_half_day_blocking": true,
+    "formal_software_min": 3,
+    "include_remarks": true,
+    "chair_title": "教授",
+    "secretary_title": "讲师",
+    "prefer_senior": true,
+    "grouping": "secretary",
+    "campus_start_dates": {},
+    "soft_weights": {
+      "balance_student_count": 50,
+      "prefer_senior_teacher": 90,
+      "avoid_cross_campus": 50,
+      "external_mentor_concentration": 40,
+      "prefer_academic_master_first": 70
+    },
+    "expert_count_includes_chair": true,
+    "need_chair": true,
+    "secretary_count": 1,
+    "avoid_supervisor": true,
+    "supervisor_policy": "avoid"
+  },
+  "defenseType": "正式答辩",
+  "generatedAt": "2026-10-17 00:14",
+  "groups": [
+    {
+      "id": 7,
+      "defenseType": "正式答辩",
+      "groupName": "G1",
+      "campus": "创新港",
+      "classroom": "QA教室1",
+      "date": "2026-10-20",
+      "timeRange": "08:00-12:00",
+      "chairman": "QA教师02",
+      "secretary": "QA教师16",
+      "chairTitle": "教授",
+      "chairId": 2,
+      "secretaryId": 16,
+      "teachers": [
+        {
+          "id": 3,
+          "name": "QA教师03",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        },
+        {
+          "id": 4,
+          "name": "QA教师04",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        },
+        {
+          "id": 5,
+          "name": "QA教师05",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        },
+        {
+          "id": 6,
+          "name": "QA教师06",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        }
+      ],
+      "students": [
+        {
+          "id": 2,
+          "name": "QA学生002",
+          "studentType": "专硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "secretaryId": 16,
+          "secretaryName": "QA教师16",
+          "studentNo": "QAACC002",
+          "remark": ""
+        },
+        {
+          "id": 3,
+          "name": "QA学生003",
+          "studentType": "学硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "secretaryId": 16,
+          "secretaryName": "QA教师16",
+          "studentNo": "QAACC003",
+          "remark": ""
+        },
+        {
+          "id": 4,
+          "name": "QA学生004",
+          "studentType": "专硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "secretaryId": 16,
+          "secretaryName": "QA教师16",
+          "studentNo": "QAACC004",
+          "remark": ""
+        },
+        {
+          "id": 5,
+          "name": "QA学生005",
+          "studentType": "学硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "secretaryId": 16,
+          "secretaryName": "QA教师16",
+          "studentNo": "QAACC005",
+          "remark": ""
+        },
+        {
+          "id": 6,
+          "name": "QA学生006",
+          "studentType": "专硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "secretaryId": 16,
+          "secretaryName": "QA教师16",
+          "studentNo": "QAACC006",
+          "remark": ""
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "defenseType": "正式答辩",
+      "groupName": "G2",
+      "campus": "创新港",
+      "classroom": "QA教室2",
+      "date": "2026-10-20",
+      "timeRange": "08:00-12:00",
+      "chairman": "QA教师01",
+      "secretary": "QA教师15",
+      "chairTitle": "教授",
+      "chairId": 1,
+      "secretaryId": 15,
+      "teachers": [
+        {
+          "id": 7,
+          "name": "QA教师07",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        },
+        {
+          "id": 8,
+          "name": "QA教师08",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        },
+        {
+          "id": 9,
+          "name": "QA教师09",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        },
+        {
+          "id": 10,
+          "name": "QA教师10",
+          "title": "教授",
+          "roles": [
+            "主席",
+            "组长",
+            "普通专家"
+          ],
+          "isExternal": false
+        }
+      ],
+      "students": [
+        {
+          "id": 1,
+          "name": "QA学生001",
+          "studentType": "学硕",
+          "mentorName": "QA教师01",
+          "mentorId": 1,
+          "secretaryId": 16,
+          "secretaryName": "QA教师16",
+          "studentNo": "QAACC001",
+          "remark": "QA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\nQA长备注 <仅文本> & 换行\n"
+        },
+        {
+          "id": 7,
+          "name": "QA学生007",
+          "studentType": "学硕",
+          "mentorName": "QA教师02",
+          "mentorId": 2,
+          "secretaryId": 15,
+          "secretaryName": "QA教师15",
+          "studentNo": "QAACC007",
+          "remark": ""
+        },
+        {
+          "id": 8,
+          "name": "QA学生008",
+          "studentType": "专硕",
+          "mentorName": "QA教师02",
+          "mentorId": 2,
+          "secretaryId": 15,
+          "secretaryName": "QA教师15",
+          "studentNo": "QAACC008",
+          "remark": ""
+        },
+        {
+          "id": 9,
+          "name": "QA学生009",
+          "studentType": "学硕",
+          "mentorName": "QA教师02",
+          "mentorId": 2,
+          "secretaryId": 15,
+          "secretaryName": "QA教师15",
+          "studentNo": "QAACC009",
+          "remark": ""
+        },
+        {
+          "id": 10,
+          "name": "QA学生010",
+          "studentType": "专硕",
+          "mentorName": "QA教师02",
+          "mentorId": 2,
+          "secretaryId": 15,
+          "secretaryName": "QA教师15",
+          "studentNo": "QAACC010",
+          "remark": ""
+        },
+        {
+          "id": 11,
+          "name": "QA学生011",
+          "studentType": "学硕",
+          "mentorName": "QA教师02",
+          "mentorId": 2,
+          "secretaryId": 15,
+          "secretaryName": "QA教师15",
+          "studentNo": "QAACC011",
+          "remark": ""
+        },
+        {
+          "id": 12,
+          "name": "QA学生012",
+          "studentType": "专硕",
+          "mentorName": "QA教师02",
+          "mentorId": 2,
+          "secretaryId": 15,
+          "secretaryName": "QA教师15",
+          "studentNo": "QAACC012",
+          "remark": ""
+        }
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "id": 1,
+      "defenseType": "正式答辩",
+      "groupId": 8,
+      "groupName": "G2",
+      "type": "导师回避冲突",
+      "level": "error",
+      "target": "QA教师01",
+      "reason": "已开启导师回避，但导师 QA教师01 仍被安排在其学生所在的 G2 组，请更换该组的专家或秘书",
+      "relatedGroupIds": [
+        8
+      ],
+      "createdAt": "2026-10-17T00:14:51.897822+08:00"
+    },
+    {
+      "id": 2,
+      "defenseType": "正式答辩",
+      "groupId": 8,
+      "groupName": "G2",
+      "type": "秘书连续性提示",
+      "level": "error",
+      "target": "QA教师16",
+      "reason": "G2 组学生 QA学生001 绑定的秘书为 QA教师16，本组未沿用该秘书，请明确调整这些学生的秘书绑定或组秘书",
+      "relatedGroupIds": [
+        8
+      ],
+      "createdAt": "2026-10-17T00:14:51.897822+08:00"
+    },
+    {
+      "id": 3,
+      "defenseType": "正式答辩",
+      "groupId": 8,
+      "groupName": "G2",
+      "type": "导师与学生场次不一致",
+      "level": "error",
+      "target": "QA教师01",
+      "reason": "G2 组学生 QA学生001 的导师 QA教师01 未在同一场次参与评审，请同步导师与学生的到场时段",
+      "relatedGroupIds": [
+        8
+      ],
+      "createdAt": "2026-10-17T00:14:51.897822+08:00"
+    }
+  ]
+}
