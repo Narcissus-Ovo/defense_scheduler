@@ -84,6 +84,7 @@ def normalize_schedule_rules(raw):
     rules['supervisor_policy'] = ('avoid' if avoidance else 'none') if defense_type == 'formal' else 'same_group'
     if defense_type == 'formal' and (rules['expert_count'] != 5 or rules['expert_min'] != 5):
         raise ValidationError('正式答辩必须配置 5 位专家（含主席）')
+    # [TASK-P04 修改] 后端规则归一化与界面人数口径保持一致。
     floor = 5
     try:
         if any(isinstance(rules[k], bool) or not isinstance(rules[k], int) for k in (

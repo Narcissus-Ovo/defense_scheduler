@@ -131,6 +131,7 @@
         <el-form-item label="计为软件学院导师"><el-switch v-model="form.isSoftwareTeacher" /><span class="text-xs text-gray-500 ml-2">补充认定；非外院且学院含“软件”时自动计入。</span></el-form-item>
         <el-form-item label="职称" prop="title">
           <el-select v-model="form.title" placeholder="请选择职称" style="width: 100%">
+            <!-- [TASK-P04 修改] 支持录入教授/研究员序列职称。 -->
             <el-option label="教授" value="教授" />
             <el-option label="研究员" value="研究员" />
             <el-option label="副教授" value="副教授" />

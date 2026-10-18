@@ -106,6 +106,7 @@ def generate_schedule(
     validate_inputs(parsed_teachers, parsed_students, parsed_rooms, rules)
 
     candidate_slots = build_candidate_slots(rules, parsed_rooms)
+    # [TASK-P05 修改] 将外院导师身份传入分组器，以执行导师学生数对应的组数规则。
     external_supervisor_ids = {teacher.id for teacher in parsed_teachers if teacher.is_external}
     grouped_students = build_student_groups(parsed_students, rules, external_supervisor_ids)
 
@@ -370,6 +371,7 @@ def default_slot(day: date, hour: int, minute: int) -> TimeRange:
     return TimeRange(start=start, end=end)
 
 
+# [TASK-P05 修改] 外院导师小于3名学生保持一组，3名及以上拆为两组。
 def build_student_groups(
     students: Sequence[Student],
     rules: Dict[str, Any],
@@ -478,6 +480,7 @@ def _pack_student_clusters(
         key = ((student.campus or ""), cluster_key(student))
         clusters.setdefault(key, []).append(student)
 
+    # [TASK-P05 修改] 分组前按外院导师学生阈值拆分簇。
     cluster_parts = []
     for cluster in clusters.values():
         supervisor_id = cluster_key(cluster[0])
@@ -911,6 +914,7 @@ def teacher_is_eligible(
 
 
 # 职称等级表：等级越高越资深。键统一小写，中英文写法都收录。
+# [TASK-P04 修改] 统一教授/研究员及副教授/副研究员的职称等级。
 TITLE_RANKS = {
     "教授": 3,
     "研究员": 3,
@@ -1140,6 +1144,7 @@ def detect_global_conflicts(
                         teacher_name=supervisor_name,
                     )
                 )
+    # [TASK-P05 新增] 对外院导师学生组数执行生成、调整、发布共用的硬校验。
     external_mentor_students: Dict[int, List[Student]] = {}
     student_group = {sid: draft.group_id for draft in drafts for sid in draft.student_ids}
     for student in students:

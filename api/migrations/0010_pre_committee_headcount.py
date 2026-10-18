@@ -1,3 +1,4 @@
+# [TASK-P04 新增] 将已有预答辩配置迁移为固定5位专家（含组长）。
 from django.db import migrations
 
 

@@ -172,6 +172,7 @@ class IntegrationContractTests(TestCase):
         self.assertEqual(response.data['defenseType'], '预答辩')
         self.assertIn('studentCount', response.data)
         self.assertEqual(response.data['endDate'], (timezone.localdate() + timedelta(days=10)).isoformat())
+        # [TASK-P04 测试] API默认预答辩专家总数固定为5位。
         self.assertEqual(response.data['expertCount']['target'], 5)
         self.assertEqual(response.data['policyVersion'], 2)
         self.assertFalse(response.data['mentorAvoidance'])
@@ -2549,3 +2550,11 @@ class MentorColorSourceTests(TestCase):
         self.assertEqual(color_index(''), color_index('unknown'))
         self.assertEqual(color_index('   '), color_index('unknown'))
         self.assertEqual(mentor_color(''), mentor_color('unknown'))
+
+    def test_palette_distinguishes_seventeen_mentors(self):
+        from .mentor_colors import color_index, load_color_source, mentor_color
+
+        names = [f'QA导师{index:02d}' for index in range(1, 18)]
+        self.assertGreaterEqual(len(load_color_source()['palette']), 64)
+        self.assertEqual(len({color_index(name) for name in names}), len(names))
+        self.assertEqual(len({mentor_color(name) for name in names}), len(names))

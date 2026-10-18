@@ -44,6 +44,7 @@ def _format_time_label(raw):
         return raw
 
 
+# [TASK-P12 修改] Word 表格标签支持错误级问题着色。
 def _label_cell(cell, text, color=None):
     """写入加粗结构标签，可按冲突级别着色。"""
     paragraph = cell.paragraphs[0]
@@ -59,6 +60,7 @@ def _names_with_colors(cell, names_with_color, separator='、'):
         _styled_run(paragraph, name, color=color)
 
 
+# [TASK-P12 修改] 输出学生关系与可选备注，并在 Word 中列出冲突。
 def export_schedule_word(schedule_version, defense_label, include_remarks=True, conflicts=None):
     """生成 Word 时间安排表文档对象；调用方负责写入响应。"""
     groups = list(export_groups(schedule_version))

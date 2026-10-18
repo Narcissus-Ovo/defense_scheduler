@@ -8,6 +8,7 @@ from algorithm import GroupDraft, SchedulingError, TimeRange, detect_global_conf
 from scheduling.policies import committee_violations, is_software_teacher, scenario_policy, teacher_can_role
 
 
+# [TASK-P04 测试] 覆盖专家总人数、角色资格与研究员职称。
 class CommitteeV2Tests(SimpleTestCase):
     def rules(self, kind='pre', **overrides):
         return {
@@ -244,6 +245,7 @@ class ScenarioPolicyV2Tests(SimpleTestCase):
         self.assertNotIn('role_qualification', {conflict['type'] for conflict in conflicts})
 
 
+# [TASK-P05 测试] 覆盖外院导师1/2组阈值及容量、校区、组人数边界。
 class SchedulingPreferencesV2Tests(SimpleTestCase):
     def external_schedule(self, weight=100, same_day_staff_busy=False, student_count=3,
                           group_min=1, group_max=4, group_size=2):
@@ -480,6 +482,7 @@ class LinkedResourceServiceV2Tests(TestCase):
         self.assertEqual({s.bound_secretary_id for g in export_groups(old) for s in g.students.all()}, {teachers[-1].pk})
 
 
+# [TASK-P09/P12 测试] 覆盖版本评分数据、Word备注/冲突标记及关系导出。
 class FormalSecretaryExportV2Tests(TestCase):
     def setUp(self):
         from .models import Group, ScheduleVersion, Student, Teacher
@@ -568,6 +571,25 @@ class FormalSecretaryExportV2Tests(TestCase):
         without_remarks = export_schedule_word(self.version, '正式答辩', False)
         text_without_remarks = '\n'.join(cell.text for row in without_remarks.tables[0].rows for cell in row.cells)
         self.assertNotIn('测试备注', text_without_remarks)
+
+    def test_excel_export_prints_all_columns_together_and_repeats_table_headers(self):
+        from .services.export_excel import build_schedule_workbook
+
+        workbook = build_schedule_workbook(self.version, 'formal')
+
+        for sheet in workbook:
+            self.assertEqual(sheet.page_setup.orientation, 'landscape')
+            self.assertEqual(int(sheet.page_setup.paperSize), int(sheet.PAPERSIZE_A4))
+            self.assertEqual(sheet.page_setup.fitToWidth, 1)
+            self.assertEqual(sheet.page_setup.fitToHeight, 0)
+            self.assertTrue(sheet.sheet_properties.pageSetUpPr.fitToPage)
+            expected_area = f'$A$1:${sheet.cell(1, sheet.max_column).column_letter}${sheet.max_row}'
+            self.assertIn(expected_area, str(sheet.print_area))
+        group_sheet = workbook['组G1']
+        header_row = next(row[0].row for row in group_sheet.iter_rows()
+                          if row[0].value == '学生姓名')
+        self.assertEqual(group_sheet.print_title_rows, f'${header_row}:${header_row}')
+        self.assertEqual(workbook['教室学生明细'].print_title_rows, '$1:$1')
 
     def test_explicit_formal_binding_is_used_without_writing_global_student(self):
         self.assert_student_binding(self.formal_secretary.pk, self.formal_secretary.name)

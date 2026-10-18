@@ -62,6 +62,7 @@
         <el-form-item label="每组学生人数">
           <el-input-number v-model="form.studentCount.target" :min="1" controls-position="right" class="w-full" />
         </el-form-item>
+        <!-- [TASK-P04 修改] 预答辩和正式答辩固定5位专家，中期答辩至少5位。 -->
         <el-form-item label="专家总人数">
           <el-input-number v-model="form.expertCount.target" :min="expertMinimum" :max="expertCountLocked ? 5 : undefined" :disabled="expertCountLocked" controls-position="right" class="w-full" />
         </el-form-item>

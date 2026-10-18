@@ -18,6 +18,7 @@ export interface ScheduleStudent {
   studentType: string
   mentorName: string
   mentorId?: number | null
+  // [TASK-P09 新增] 评分按导师外院属性统计；null表示数据缺失。
   mentorIsExternal?: boolean | null
   secretaryId?: number | null
   secretaryName?: string
@@ -65,6 +66,7 @@ export interface ScheduleResult {
   defenseType: DefenseType
   generatedAt: string
   groups: ScheduleGroup[]
+  // [TASK-P12 新增] 历史版本导出按该版本规则快照处理备注。
   rules?: { include_remarks?: boolean; includeRemarks?: boolean }
   /** 后端生成排期时的冲突快照；旧后端/Mock 模式下不存在 */
   conflicts?: ScheduleConflict[]

@@ -107,6 +107,7 @@ def validate_rule_config(config):
     experts = config['expertCount']
     target = parse_non_negative_int(experts['target'], 'expertCount.target')
     minimum = parse_non_negative_int(experts['min'], 'expertCount.min')
+    # [TASK-P04 修改] 三类答辩至少5位；预答辩和正式答辩均固定5位。
     floor = 5
     if minimum < floor:
         raise serializers.ValidationError({'expertCount': [f'专家人数含主席/组长，至少需要 {floor} 人']})

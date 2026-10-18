@@ -16,6 +16,7 @@ export function validateWizardRules(config: RuleConfig): string[] {
       || config.expertCount.target < config.expertCount.min) {
     errors.push('专家人数不能低于 1 或已设置的最少人数，请核对“更多要求”。')
   }
+  // [TASK-P04 修改] 向导与后端一致执行三类答辩至少5位专家规则。
   const expertMinimum = 5
   if (config.expertCount.min < expertMinimum || config.expertCount.target < expertMinimum) errors.push(`${config.defenseType}至少需要 ${expertMinimum} 位专家（含主席/组长）。`)
   if (config.defenseType === '预答辩' && (config.expertCount.target !== 5 || config.expertCount.min !== 5)) errors.push('预答辩必须固定 5 位专家（4 位普通专家和 1 位组长）。')

@@ -3,6 +3,7 @@
     <div class="h-14 flex items-center justify-center border-b font-bold text-lg text-blue-600 tracking-wide">
       答辩安排助手
     </div>
+    <!-- [TASK-P02 修改] 选择答辩类型，并由路由查询参数保持各模块上下文。 -->
     <div class="px-4 py-3 border-b">
       <div class="text-xs text-gray-500 mb-2">当前答辩类型</div>
       <el-select v-model="defenseType" size="small" class="w-full" aria-label="当前答辩类型">

@@ -46,6 +46,7 @@ assert.equal(legacyPre.expertCount.min, 5)
 assert.equal(buildScheduleRules('正式答辩', formal).formal_software_min, 3)
 const migratedWeights = normalizeRuleConfig({ ...getDefaultRuleConfig('预答辩'), policyVersion: undefined, softWeights: { balanceStudentCount: 5, preferSeniorTeacher: 8, avoidCrossCampus: 3, externalMentorConcentration: 2, preferAcademicMasterFirst: 0 } })
 assert.equal(migratedWeights.softWeights.preferSeniorTeacher, 80)
+// [TASK-P09 新增] 覆盖五项评分、缺失指标和真实/演示口径一致性。
 const { evaluateSoftConstraints } = load('src/utils/optimization.ts')
 const { evaluateSoftConstraints: evaluateMockSoftConstraints } = load('src/utils/optimizationMock.ts')
 const scoringConfig = getDefaultRuleConfig('正式答辩')
@@ -119,6 +120,9 @@ assert.ok(html.includes('STUDENT PRIVATE &lt;备注&gt;'))
 assert.ok(!renderSchedulePrint(printResult, { includeRemarks: false }).includes('STUDENT PRIVATE'))
 const { getMentorColor } = load('src/utils/color.ts')
 assert.ok(html.includes(`background:${getMentorColor('导师甲')}`), 'PDF follows the shared mentor color contract')
+const stressMentors = Array.from({ length: 17 }, (_, index) => `QA导师${String(index + 1).padStart(2, '0')}`)
+assert.equal(new Set(stressMentors.map(getMentorColor)).size, stressMentors.length,
+  'the expanded shared palette distinguishes 17 mentors')
 const { getScheduleExperts } = load('src/domain/scheduleExperts.ts')
 const backendGroup = { ...printResult.groups[0], chairId: 1, teachers: [{ id: 3, name: '组员甲', title: '副教授' }] }
 assert.equal(getScheduleExperts(backendGroup).length, 2, 'API member-only lists also count the chair')

@@ -59,6 +59,8 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         'teacher_inactive': ('人员已停用', 'error'),
         'formal_mentor_session_missing': ('导师与学生场次不一致', 'error'),
         'mentor_missing': ('学生缺少导师', 'error'),
+        # [TASK-P05 新增] 外院导师组数不符作为错误，阻止发布。
+        'external_mentor_group_count': ('外院导师分组冲突', 'error'),
         'external_mentor_concentration': ('外院教师集中安排提示', 'warning'),
         'software_participation_imbalance': ('软件学院评审次数均衡提示', 'warning'),
     }
@@ -192,6 +194,7 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                 raise ValidationError('版本 ID 格式不正确')
         return queryset.filter(is_current=True).first() if is_admin_user(request.user) else queryset.first()
 
+    # [TASK-P09/P12 修改] 实时及冻结版本响应补足评分和版本化导出所需字段。
     def _version_result(self, schedule_version):
         if schedule_version.result_snapshot:
             result = {**schedule_version.result_snapshot}
@@ -408,6 +411,7 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    # [TASK-P12 修改] Word 导出按所选版本传递备注配置和冲突信息。
     @action(detail=False, methods=['get'], url_path='export_word')
     def export_word(self, request):
         """导出当前排期为 Word 时间安排表（版式对齐学院归档样例，导师与学生同色）"""

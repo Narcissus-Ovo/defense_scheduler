@@ -91,6 +91,7 @@ def build_schedule_workbook(schedule_version, defense_type, conflicts=None):
             cell = sheet.cell(row=row, column=col, value=header)
             cell.font = Font(bold=True, color='FFFFFF')
             cell.fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+        sheet.print_title_rows = f'{row}:{row}'
 
         row += 1
 
@@ -163,13 +164,32 @@ def build_schedule_workbook(schedule_version, defense_type, conflicts=None):
                     cell.font = Font(color='C00000')
     for sheet in wb:
         sheet.freeze_panes = 'A2'
+        sheet.page_setup.orientation = 'landscape'
+        sheet.page_setup.paperSize = sheet.PAPERSIZE_A4
+        sheet.page_setup.fitToWidth = 1
+        sheet.page_setup.fitToHeight = 0
+        sheet.sheet_properties.pageSetUpPr.fitToPage = True
+        sheet.page_margins.left = 0.25
+        sheet.page_margins.right = 0.25
+        sheet.page_margins.top = 0.5
+        sheet.page_margins.bottom = 0.5
+        sheet.print_area = sheet.dimensions
         if sheet.title in ('教室学生明细', '冲突明细'):
             sheet.auto_filter.ref = sheet.dimensions
+            sheet.print_title_rows = '1:1'
             for cell in sheet[1]:
                 cell.fill = PatternFill(fill_type='solid', fgColor=scenario_color)
                 cell.font = Font(bold=True, color='FFFFFF' if defense_type == 'mid' else '000000')
-            for column in sheet.columns:
-                sheet.column_dimensions[column[0].column_letter].width = 24
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            if sheet.title == '教室学生明细':
+                column_widths = [10, 22, 14, 18, 18, 16, 20, 16, 36]
+            else:
+                column_widths = [14, 14, 24, 24, 60]
+            for index, width in enumerate(column_widths[:sheet.max_column], 1):
+                sheet.column_dimensions[sheet.cell(1, index).column_letter].width = width
+            for row_cells in sheet.iter_rows(min_row=2):
+                for cell in row_cells:
+                    cell.alignment = Alignment(vertical='top', wrap_text=True)
         for row_cells in sheet:
             for cell in row_cells:
                 if isinstance(cell.value, str) and cell.value.startswith('='):

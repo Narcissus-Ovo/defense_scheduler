@@ -187,6 +187,7 @@ class RuleDefaultsV2Tests(TestCase):
         self.assertIn('config', serializer.errors)
 
 
+# [TASK-P04 测试] 覆盖已有预答辩人数配置迁移。
 class DataMigrationV2Tests(TestCase):
     def test_pre_rule_migration_fixes_existing_committee_headcount(self):
         row = RuleConfig.objects.create(defense_type='pre', config={

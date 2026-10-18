@@ -8,6 +8,7 @@ export interface Teacher {
   isActive?: boolean
   memberEligible?: boolean
   isSoftwareTeacher?: boolean
+  // [TASK-P04 修改] 使用共享职称枚举，包括研究员职称。
   title: TeacherTitle
   roles: string[]
   availableTypes: string[]

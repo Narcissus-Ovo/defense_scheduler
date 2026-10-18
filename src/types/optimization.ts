@@ -3,6 +3,7 @@ export interface SoftConstraintScore {
   label: string
   score: number
   maxScore: number
+  // [TASK-P09 新增] 让评分结果携带用于加权展示的配置权重。
   weight: number
   description: string
 }
@@ -26,6 +27,7 @@ export interface OptimizationSummary {
   totalScore: number
   maxScore: number
   scores: SoftConstraintScore[]
+  // [TASK-P09 新增] 不完整数据不计入总分分母，单独列出原因。
   unassessed: UnassessedSoftConstraint[]
   suggestions: OptimizationSuggestion[]
   generatedAt: string

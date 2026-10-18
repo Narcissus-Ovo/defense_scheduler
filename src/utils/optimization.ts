@@ -2,6 +2,7 @@ import type { ScheduleResult } from '../types/schedule'
 import type { RuleConfig } from '../types/ruleConfig'
 import type { OptimizationSummary, SoftConstraintScore } from '../types/optimization'
 
+// [TASK-P09 修改] 五项质量评分只使用排期观测数据，缺失项不进入总分分母。
 /** Scores use observed data only; unavailable metrics do not enter the denominator. */
 export function evaluateSoftConstraints(result: ScheduleResult, config: RuleConfig): OptimizationSummary {
   const scores: SoftConstraintScore[] = []
