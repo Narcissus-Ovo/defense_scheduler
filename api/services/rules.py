@@ -42,10 +42,14 @@ def normalize_schedule_rules(raw):
             'avoid_cross_campus': config['softWeights']['avoidCrossCampus'],
             'external_mentor_concentration': config['softWeights']['externalMentorConcentration'],
             'prefer_academic_master_first': config['softWeights']['preferAcademicMasterFirst'],
+            'balance_software_participation': 100 if defense_type == 'formal' else 0,
         },
     }
     for key, value in defaults.items():
         rules.setdefault(key, value)
+    if not isinstance(rules['soft_weights'], dict):
+        raise ValidationError('soft_weights 必须是对象')
+    rules['soft_weights'] = {**defaults['soft_weights'], **rules['soft_weights']}
     from datetime import datetime
     starts = rules['campus_start_dates']
     if not isinstance(starts, dict) or any(key not in ('创新港', '兴庆') for key in starts):

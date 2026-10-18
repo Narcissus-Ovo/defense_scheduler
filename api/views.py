@@ -621,6 +621,51 @@ class StudentViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
         '参加答辩类型': 'defenseTypes',
     }
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        raw_defense_type = self.request.query_params.get('defense_type')
+        if not raw_defense_type:
+            return context
+
+        from rest_framework.exceptions import ValidationError
+
+        labels_to_values = {label: value for value, label in DEFENSE_TYPE_LABELS.items()}
+        defense_type = labels_to_values.get(raw_defense_type, raw_defense_type)
+        if defense_type not in DEFENSE_TYPE_LABELS:
+            raise ValidationError({'defense_type': '答辩类型必须为 pre、formal 或 mid'})
+
+        versions = ScheduleVersion.objects.filter(defense_type=defense_type)
+        if not is_admin_user(self.request.user):
+            versions = versions.filter(status='published')
+        version_id = self.request.query_params.get('version_id')
+        if version_id:
+            try:
+                version_id = int(version_id)
+            except (TypeError, ValueError):
+                raise ValidationError({'version_id': '版本 ID 格式不正确'})
+            version = versions.filter(pk=version_id).first()
+            if version is None:
+                raise ValidationError({'version_id': '所选答辩类型下不存在可查看的该版本'})
+        elif is_admin_user(self.request.user):
+            version = versions.filter(is_current=True).first()
+        else:
+            version = versions.order_by('-created_at').first()
+
+        group_map = {}
+        if version:
+            memberships = {}
+            for student_id, group_name in Group.objects.filter(
+                schedule_version=version,
+            ).values_list('students__id', 'group_id'):
+                if student_id is not None:
+                    memberships.setdefault(student_id, set()).add(group_name)
+            group_map = {
+                student_id: next(iter(group_names)) if len(group_names) == 1 else '多个分组'
+                for student_id, group_names in memberships.items()
+            }
+        context['current_group_map'] = group_map
+        return context
+
     def _normalize_student_no(self, processed_row):
         """学号统一转为字符串：Excel 数值单元格会被读成 int/float，需去掉小数尾巴"""
         raw = processed_row.get('studentNo')

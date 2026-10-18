@@ -798,7 +798,7 @@ const handleExportConfirm = async (format: 'excel' | 'word' | 'pdf' = 'excel') =
 const loadOptions = async (context: ScheduleContext) => {
   const [teachers, students, classrooms] = await Promise.all([
     listTeachers(),
-    listStudents(),
+    listStudents(context.defenseType, context.versionId),
     listClassrooms()
   ])
 
@@ -877,7 +877,9 @@ const prepareGeneration = async () => {
   const context = workspace.capture()
   loading.value = true
   try {
-    const [config, students] = await Promise.all([getRuleConfig(context.defenseType), listStudents()])
+    const [config, students] = await Promise.all([
+      getRuleConfig(context.defenseType), listStudents(context.defenseType)
+    ])
     if (!workspace.isCurrent(context)) return
     generationConfig.value = config
     generationStudentCount.value = students.filter(student => student.defenseTypes.includes(context.defenseType)).length
@@ -895,7 +897,9 @@ const prepareLinkedGeneration = async () => {
   const context = workspace.capture()
   loading.value = true
   try {
-    const [pre, formal, students] = await Promise.all([getRuleConfig('预答辩'), getRuleConfig('正式答辩'), listStudents()])
+    const [pre, formal, students] = await Promise.all([
+      getRuleConfig('预答辩'), getRuleConfig('正式答辩'), listStudents('预答辩')
+    ])
     if (!workspace.isCurrent(context)) return
     linkedConfigs.value = [pre, { ...formal, preservePreDefenseGroups: true }]
     const errors = [...validateWizardRules(pre), ...validateWizardRules(formal)]

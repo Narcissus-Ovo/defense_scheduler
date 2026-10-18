@@ -4,6 +4,8 @@ import { runtimeConfig } from '../config/runtime'
 import request from './request'
 import { extractList } from './response'
 import type { Student } from '../types/student'
+import type { DefenseType } from '../domain/defense'
+import { toBackendDefenseType } from '../domain/defense'
 import { mockStudents } from '../utils/mockData'
 
 // Mock Data Storage
@@ -13,9 +15,13 @@ let studentsData = [...mockStudents]
 
 const USE_MOCK = runtimeConfig.useMock
 
-export const listStudents = async () => {
+export const listStudents = async (defenseType?: DefenseType, versionId?: number) => {
   if (!USE_MOCK) {
-    const result = await request.get('/students/')
+    const result = await request.get('/students/', {
+      params: defenseType
+        ? { defense_type: toBackendDefenseType(defenseType), version_id: versionId }
+        : undefined
+    })
     return extractList<Student>(result)
   }
   studentsData = repository.read()

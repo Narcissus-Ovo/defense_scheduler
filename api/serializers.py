@@ -194,6 +194,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
     import_unique_fields = [('studentNo', '学号重复，请检查导入数据')]
 
+    currentGroup = serializers.SerializerMethodField()
     studentNo = serializers.CharField(source='student_no', allow_blank=True, allow_null=True, required=False)
     gender = serializers.CharField(allow_blank=True, required=False)
     studentType = serializers.CharField(source='student_type', required=False)
@@ -208,8 +209,12 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'id', 'name', 'studentNo', 'gender', 'studentType', 'mentorName', 'mentorId',
-            'campus', 'defenseTypes', 'secretaryName', 'secretaryId', 'remark'
+            'campus', 'defenseTypes', 'secretaryName', 'secretaryId', 'currentGroup', 'remark'
         ]
+
+    def get_currentGroup(self, instance):
+        group_map = self.context.get('current_group_map')
+        return group_map.get(instance.pk) if group_map is not None else None
 
     def validate_name(self, value):
         return value.strip()

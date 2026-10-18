@@ -31,6 +31,15 @@ class SchedulePolicyBoundaryTests(SimpleTestCase):
         normalized = normalize_schedule_rules({'policy_version': 2, **internal})
         self.assertTrue(all(key not in normalized for key in internal))
 
+    def test_formal_random_balance_is_enabled_by_default_but_can_be_disabled(self):
+        default = normalize_schedule_rules({'policy_version': 2, 'defense_type': 'formal'})
+        disabled = normalize_schedule_rules({
+            'policy_version': 2, 'defense_type': 'formal',
+            'soft_weights': {'balance_software_participation': 0},
+        })
+        self.assertEqual(default['soft_weights']['balance_software_participation'], 100)
+        self.assertEqual(disabled['soft_weights']['balance_software_participation'], 0)
+
     def test_course_blocks_whole_half_day_and_preserves_day_boundaries(self):
         from algorithm import parse_time_range
         values = expand_busy_half_days(['2026-10-12 10:00-11:00', '2026-10-12 16:00-17:00'])
@@ -69,6 +78,15 @@ class ArchitectureV2IntegrationTests(TestCase):
         self.assertFalse([c for c in pre['conflicts'] if c['level'] == 'error'], pre['conflicts'])
         self.assertFalse([c for c in formal['conflicts'] if c['level'] == 'error'], formal['conflicts'])
         self.assertEqual(formal['sourcePreVersionId'], pre['versionId'])
+        generation_log = OperationLog.objects.filter(type='生成', authoritative=True).order_by('-pk').first()
+        self.assertIsNotNone(generation_log)
+        self.assertEqual(set(generation_log.details['version_ids']),
+                         {pre['versionId'], formal['versionId']})
+        self.assertEqual(
+            {int(version_id): result['versionId']
+             for version_id, result in generation_log.details['after'].items()},
+            {pre['versionId']: pre['versionId'], formal['versionId']: formal['versionId']},
+        )
         memberships = lambda result: {g['groupName']: sorted(s['id'] for s in g['students']) for g in result['groups']}
         self.assertEqual(memberships(pre), memberships(formal))
         for group in formal['groups']:
@@ -123,6 +141,52 @@ class ArchitectureV2IntegrationTests(TestCase):
             item for item in unmatched.data['errors'] if item['type'] == 'mentor_not_found'
         )
         self.assertEqual(unmatched_mentor_issue['teacherNames'], ['教师表中不存在的导师'])
+
+    def test_preflight_blocks_inactive_or_filtered_mentor_without_creating_a_version(self):
+        mentor = self.students[0].mentor
+        mentor.available_types = ['正式答辩']
+        mentor.save(update_fields=['available_types'])
+
+        preflight = self.client.post('/api/schedule/preflight/', {
+            'rules': self.rules('pre'),
+        }, format='json')
+        self.assertEqual(preflight.status_code, 200, preflight.data)
+        issue = next(item for item in preflight.data['errors']
+                     if item['type'] == 'mentor_unavailable_for_defense')
+        self.assertIn('S00', issue['studentNames'])
+        self.assertEqual(issue['teacherNames'], [mentor.name])
+
+        generated = self.client.post('/api/schedule/generate/', {
+            'rules': self.rules('pre'),
+        }, format='json')
+        self.assertEqual(generated.status_code, 400, generated.data)
+        self.assertEqual(ScheduleVersion.objects.count(), 0)
+
+        mentor.available_types = []
+        mentor.is_active = False
+        mentor.save(update_fields=['available_types', 'is_active'])
+        inactive = self.client.post('/api/schedule/preflight/', {
+            'rules': self.rules('pre'),
+        }, format='json')
+        self.assertEqual(inactive.status_code, 200, inactive.data)
+        self.assertIn('mentor_unavailable_for_defense',
+                      {item['type'] for item in inactive.data['errors']})
+
+    def test_fully_occupied_course_halves_cannot_be_published(self):
+        Teacher.objects.update(unavailable_times=(
+            '2026-10-12 08:00-12:00; 2026-10-12 14:00-18:00'
+        ))
+        Room.objects.update(available_times='2026-10-12 08:00-18:00')
+        generated = self.client.post('/api/schedule/generate/', {
+            'rules': self.rules('pre'),
+        }, format='json')
+        self.assertEqual(generated.status_code, 200, generated.data)
+        published = self.client.post('/api/schedule/publish/', {
+            'version_id': generated.data['versionId'], 'expected_revision': generated.data['revision'],
+        }, format='json')
+        self.assertEqual(published.status_code, 400, published.data)
+        self.assertTrue(published.data['conflicts'])
+        self.assertEqual(ScheduleVersion.objects.get(pk=generated.data['versionId']).status, 'draft')
 
     def test_generation_persists_explicit_random_seed_in_rule_snapshot(self):
         seed = 837261
@@ -237,6 +301,51 @@ class ArchitectureV2IntegrationTests(TestCase):
         no_source, _ = build_algorithm_input('formal', rules={'_source_pre_version_id': None})
         self.assertTrue(all(s['previous_group_id'] is None for s in no_source['students']))
 
+    def test_student_current_group_is_scoped_to_the_requested_stage_and_version(self):
+        generated = self.client.post('/api/schedule/generate/', {
+            'rules': self.rules('pre'),
+        }, format='json')
+        self.assertEqual(generated.status_code, 200, generated.data)
+        pre_version = ScheduleVersion.objects.get(pk=generated.data['versionId'])
+        student = self.students[0]
+        pre_group = pre_version.groups.get(students=student)
+
+        formal_version = ScheduleVersion.objects.create(defense_type='formal')
+        formal_group = Group.objects.create(
+            schedule_version=formal_version, group_id='FORMAL-1',
+            time='2026-10-19 09:00-12:00', campus='创新港',
+        )
+        formal_group.students.add(student)
+        unscheduled = Student.objects.create(
+            name='未分组学生', student_no='UNSCHEDULED', defense_types=['预答辩'],
+        )
+
+        pre_rows = self.client.get('/api/students/', {'defense_type': 'pre'})
+        formal_rows = self.client.get('/api/students/', {'defense_type': 'formal'})
+        historical_rows = self.client.get('/api/students/', {
+            'defense_type': 'pre', 'version_id': pre_version.pk,
+        })
+        self.assertEqual(pre_rows.status_code, 200)
+        self.assertEqual(formal_rows.status_code, 200)
+        self.assertEqual(historical_rows.status_code, 200)
+        self.assertEqual(next(row for row in pre_rows.data if row['id'] == student.pk)['currentGroup'],
+                         pre_group.group_id)
+        self.assertEqual(next(row for row in formal_rows.data if row['id'] == student.pk)['currentGroup'],
+                         formal_group.group_id)
+        self.assertIsNone(next(row for row in pre_rows.data if row['id'] == unscheduled.pk)['currentGroup'])
+
+        detail = self.client.get(
+            f'/api/students/{student.pk}/',
+            {'defense_type': 'formal', 'version_id': formal_version.pk},
+        )
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data['currentGroup'], formal_group.group_id)
+
+        wrong_stage = self.client.get('/api/students/', {
+            'defense_type': 'pre', 'version_id': formal_version.pk,
+        })
+        self.assertEqual(wrong_stage.status_code, 400)
+
     def test_adapter_preserves_explicit_identity_and_role_fields(self):
         student = self.students[0]
         student.mentor_name = '过时的姓名'
@@ -339,7 +448,16 @@ class ArchitectureV2IntegrationTests(TestCase):
         self.assertEqual(target.secretary_id, target_secretary)
         self.assertTrue(target.experts.filter(pk=student.mentor_id).exists() or target.chair_id == student.mentor_id)
         self.assertTrue(response.data['movement']['mentorMoved'])
-        self.assertTrue(OperationLog.objects.filter(operator='v2admin', authoritative=True).exists())
+        movement_log = OperationLog.objects.filter(
+            operator='v2admin', authoritative=True, type='调整',
+        ).order_by('-pk').first()
+        self.assertIsNotNone(movement_log)
+        self.assertEqual(movement_log.details['changes']['action'], 'move_student')
+        self.assertEqual(movement_log.details['version_ids'], [version.pk])
+        self.assertEqual(
+            movement_log.details['after'][str(version.pk)]['revision'],
+            1,
+        )
         checked = self.client.post('/api/schedule/check-conflicts/', {'defense_type': 'pre'}, format='json')
         current = self.client.get('/api/schedule/current/', {'defense_type': 'pre'})
         self.assertEqual(current.data['conflicts'], checked.data)

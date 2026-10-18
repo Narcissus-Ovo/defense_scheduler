@@ -180,6 +180,7 @@ class ScheduleApplication:
 
     def generate_version(self, rules, request_key=None):
         """Compute and persist a draft. Caller holds the schedule write transaction."""
+        rules = dict(rules)  # 防御性拷贝，避免修改调用者传入的字典
         from algorithm import SchedulingError, generate_schedule
         preflight = self.preflight_check(rules)
         if not preflight['canGenerate']:
