@@ -32,9 +32,10 @@ _ROLE_ALIASES = {
     "秘书": "secretary", "secretary": "secretary",
     "导师": "supervisor", "supervisor": "supervisor",
 }
+# [TASK-P04 修改] 共享冲突校验识别研究员职称等级。
 _TITLE_RANKS = {
-    "教授": 3, "正高": 3, "正高级": 3, "professor": 3,
-    "副教授": 2, "副高": 2, "副高级": 2, "associate professor": 2,
+    "教授": 3, "研究员": 3, "正高": 3, "正高级": 3, "professor": 3,
+    "副教授": 2, "副研究员": 2, "副高": 2, "副高级": 2, "associate professor": 2,
     "讲师": 1, "lecturer": 1,
     "助教": 0, "assistant": 0, "teaching assistant": 0,
 }

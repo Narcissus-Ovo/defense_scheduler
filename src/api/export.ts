@@ -58,8 +58,10 @@ export async function exportSchedulePdf(defenseType: DefenseType, versionId?: nu
     const [result, config] = await Promise.all([getScheduleResults(defenseType, versionId), getRuleConfig(defenseType)])
     if (!result?.groups.length) throw new Error('暂无排期数据可打印')
     const local = USE_MOCK ? readLocalConflicts(defenseType).conflicts : []
+    // [TASK-P12 修改] PDF优先采用所选历史版本的备注开关。
+    const includeRemarks = result.rules?.include_remarks ?? result.rules?.includeRemarks ?? config.includeRemarks
     preview.document.open()
-    preview.document.write(renderSchedulePrint(result, { includeRemarks: config.includeRemarks, conflicts: result.conflicts || local }))
+    preview.document.write(renderSchedulePrint(result, { includeRemarks, conflicts: result.conflicts || local }))
     preview.document.close()
     preview.focus()
   } catch (error) {

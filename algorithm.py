@@ -106,7 +106,9 @@ def generate_schedule(
     validate_inputs(parsed_teachers, parsed_students, parsed_rooms, rules)
 
     candidate_slots = build_candidate_slots(rules, parsed_rooms)
-    grouped_students = build_student_groups(parsed_students, rules)
+    # [TASK-P05 修改] 将外院导师身份传入分组器，以执行导师学生数对应的组数规则。
+    external_supervisor_ids = {teacher.id for teacher in parsed_teachers if teacher.is_external}
+    grouped_students = build_student_groups(parsed_students, rules, external_supervisor_ids)
 
     drafts: List[GroupDraft] = []
     conflicts: List[dict] = []
@@ -369,7 +371,12 @@ def default_slot(day: date, hour: int, minute: int) -> TimeRange:
     return TimeRange(start=start, end=end)
 
 
-def build_student_groups(students: Sequence[Student], rules: Dict[str, Any]) -> List[List[Student]]:
+# [TASK-P05 修改] 外院导师小于3名学生保持一组，3名及以上拆为两组。
+def build_student_groups(
+    students: Sequence[Student],
+    rules: Dict[str, Any],
+    external_supervisor_ids: Optional[set] = None,
+) -> List[List[Student]]:
     """按规则选择分组策略：
 
     - grouping=secretary：按既定秘书聚类（正式答辩沿用预答辩的"秘书+学生组不变"）；
@@ -386,16 +393,18 @@ def build_student_groups(students: Sequence[Student], rules: Dict[str, Any]) -> 
     soft = rules.get("soft_weights") or {}
     balance_weight = int(soft.get("balance_student_count", 50) or 0)
     fill_limit = target_size if balance_weight >= 50 else (max_size or target_size)
+    external_supervisor_ids = external_supervisor_ids or set()
 
     if grouping == "secretary" and any(
         s.secretary_id is not None or s.previous_group_id is not None for s in students
     ):
-        groups = _group_by_secretary(students, target_size, min_size, max_size, fill_limit)
+        groups = _group_by_secretary(students, target_size, min_size, max_size, fill_limit,
+                                     external_supervisor_ids)
     elif grouping == "supervisor" or (not grouping and get_supervisor_policy(rules) == "same_group"):
         groups = _pack_student_clusters(
             students, cluster_key=lambda s: s.supervisor_id,
             target_size=target_size, min_size=min_size, max_size=max_size,
-            fill_limit=fill_limit,
+            fill_limit=fill_limit, external_supervisor_ids=external_supervisor_ids,
         )
     else:
         ordered = sorted(students, key=lambda s: ((s.campus or ""), s.id))
@@ -425,6 +434,7 @@ def _group_by_secretary(
     min_size: int,
     max_size: int,
     fill_limit: int,
+    external_supervisor_ids: Optional[set] = None,
 ) -> List[List[Student]]:
     """跨场次沿用分组：优先按上一场次的组标识聚类（组原样保留）；
     没有组标识的学生按绑定秘书聚类（同一秘书可能带多个组，仅作兜底）；
@@ -444,7 +454,7 @@ def _group_by_secretary(
         groups.extend(_pack_student_clusters(
             unbound, cluster_key=lambda s: s.supervisor_id,
             target_size=target_size, min_size=min_size, max_size=max_size,
-            fill_limit=fill_limit,
+            fill_limit=fill_limit, external_supervisor_ids=external_supervisor_ids,
         ))
     return groups
 
@@ -456,6 +466,7 @@ def _pack_student_clusters(
     min_size: int,
     max_size: int,
     fill_limit: int = 0,
+    external_supervisor_ids: Optional[set] = None,
 ) -> List[List[Student]]:
     """按 cluster_key（如导师）聚簇后做装箱：大簇优先、同校区才可同箱。
 
@@ -463,20 +474,34 @@ def _pack_student_clusters(
     """
     capacity = max_size or target_size
     fill_limit = fill_limit or target_size
+    external_supervisor_ids = external_supervisor_ids or set()
     clusters: Dict[Any, List[Student]] = {}
     for student in sorted(students, key=lambda s: s.id):
         key = ((student.campus or ""), cluster_key(student))
         clusters.setdefault(key, []).append(student)
 
+    # [TASK-P05 修改] 分组前按外院导师学生阈值拆分簇。
+    cluster_parts = []
+    for cluster in clusters.values():
+        supervisor_id = cluster_key(cluster[0])
+        if supervisor_id in external_supervisor_ids and len(cluster) >= 3:
+            split_index = (len(cluster) + 1) // 2
+            cluster_parts.extend((cluster[:split_index], cluster[split_index:]))
+        else:
+            cluster_parts.append(cluster)
+
     ordered_clusters = sorted(
-        clusters.values(),
+        cluster_parts,
         key=lambda cluster: (-len(cluster), (cluster[0].campus or ""), cluster[0].id),
     )
 
     bins: List[List[Student]] = []
     for cluster in ordered_clusters:
-        # 单簇超过容量（同一导师学生过多）时按目标人数拆开
-        while len(cluster) > capacity:
+        cluster_external_ids = {s.supervisor_id for s in cluster
+                                if s.supervisor_id in external_supervisor_ids}
+        # External-mentor group counts are hard rules; report capacity conflicts
+        # instead of silently splitting a small cohort or creating extra groups.
+        while len(cluster) > capacity and not cluster_external_ids:
             bins.append(list(cluster[:target_size]))
             cluster = cluster[target_size:]
         placed = False
@@ -484,6 +509,9 @@ def _pack_student_clusters(
             if (
                 len(existing) + len(cluster) <= fill_limit
                 and (existing[0].campus or "") == (cluster[0].campus or "")
+                and not cluster_external_ids.intersection(
+                    s.supervisor_id for s in existing if s.supervisor_id in external_supervisor_ids
+                )
             ):
                 existing.extend(cluster)
                 placed = True
@@ -500,6 +528,10 @@ def _pack_student_clusters(
                     existing for existing in merged
                     if (existing[0].campus or "") == (group[0].campus or "")
                     and (capacity <= 0 or len(existing) + len(group) <= capacity)
+                    and not {s.supervisor_id for s in existing
+                             if s.supervisor_id in external_supervisor_ids}.intersection(
+                        s.supervisor_id for s in group if s.supervisor_id in external_supervisor_ids
+                    )
                 ),
                 None,
             )
@@ -878,10 +910,17 @@ def teacher_is_eligible(
 
 
 # 职称等级表：等级越高越资深。键统一小写，中英文写法都收录。
+# [TASK-P04 修改] 统一教授/研究员及副教授/副研究员的职称等级。
 TITLE_RANKS = {
     "教授": 3,
+    "研究员": 3,
+    "正高": 3,
+    "正高级": 3,
     "professor": 3,
     "副教授": 2,
+    "副研究员": 2,
+    "副高": 2,
+    "副高级": 2,
     "associate professor": 2,
     "讲师": 1,
     "lecturer": 1,
@@ -1113,6 +1152,30 @@ def detect_global_conflicts(
                         teacher_name=supervisor_name,
                     )
                 )
+
+    # [TASK-P05 新增] 对外院导师学生组数执行生成、调整、发布共用的硬校验。
+    external_mentor_students: Dict[int, List[Student]] = {}
+    student_group = {sid: draft.group_id for draft in drafts for sid in draft.student_ids}
+    for student in students:
+        mentor = teacher_map.get(student.supervisor_id)
+        if mentor is not None and mentor.is_external:
+            external_mentor_students.setdefault(mentor.id, []).append(student)
+    for mentor_id, advised_students in external_mentor_students.items():
+        mentor = teacher_map[mentor_id]
+        expected_groups = 1 if len(advised_students) < 3 else 2
+        assigned_groups = sorted({student_group[s.id] for s in advised_students if s.id in student_group})
+        if len(assigned_groups) != expected_groups:
+            conflicts.append(make_conflict(
+                conflict_type="external_mentor_group_count",
+                description=(
+                    f"外院导师 {mentor.name} 有 {len(advised_students)} 名学生，"
+                    f"应集中安排在 {expected_groups} 组，当前分布在 {len(assigned_groups)} 组"
+                ),
+                related_ids=[*assigned_groups, mentor_id, *[s.id for s in advised_students]],
+                teacher_name=mentor.name,
+                assigned=len(assigned_groups),
+                required=expected_groups,
+            ))
 
     # Secretary constraints: continuity with the pre-assigned secretary and
     # "a secretary must not supervise students in their own group".
