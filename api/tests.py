@@ -959,8 +959,27 @@ class ScheduleContractTests(TestCase):
         self.assertIn(eligible.name, [teacher['name'] for teacher in group['teachers']])
 
     def test_frontend_adjust_and_export_aliases_are_supported(self):
-        teacher = Teacher.objects.first()
-        secretary = Teacher.objects.last()
+        teacher = Teacher.objects.get(name='教师1')
+        teacher.roles = ['专家', '秘书', '组长']
+        teacher.save(update_fields=['roles'])
+        secretary = Teacher.objects.create(
+            name='教师5',
+            college='计算机学院',
+            title='讲师',
+            roles=['专家', '秘书'],
+            available_types=['预答辩'],
+        )
+        experts = [
+            Teacher.objects.get(name=f'教师{index}')
+            for index in range(2, 5)
+        ]
+        experts.append(Teacher.objects.create(
+            name='教师6',
+            college='计算机学院',
+            title='讲师',
+            roles=['专家', '秘书'],
+            available_types=['预答辩'],
+        ))
         room = Room.objects.first()
         student = Student.objects.first()
         version = ScheduleVersion.objects.create(
@@ -978,8 +997,9 @@ class ScheduleContractTests(TestCase):
             chair=teacher,
             secretary=secretary,
         )
-        group.experts.add(teacher)
-        group.students.add(student)
+        group.experts.add(*experts)
+        students = list(Student.objects.all())
+        group.students.add(*students)
 
         adjust_response = self.client.post(
             '/api/schedule/adjust-group/',
@@ -995,8 +1015,8 @@ class ScheduleContractTests(TestCase):
                     'classroom': room.name,
                     'chairman': teacher.name,
                     'secretary': secretary.name,
-                    'teachers': [{'id': teacher.id, 'name': teacher.name, 'title': teacher.title, 'roles': teacher.roles}],
-                    'students': [{'id': student.id, 'name': student.name, 'studentType': student.student_type, 'mentorName': student.mentor_name}],
+                    'teachers': [{'id': item.id, 'name': item.name, 'title': item.title, 'roles': item.roles} for item in experts],
+                    'students': [{'id': item.id, 'name': item.name, 'studentType': item.student_type, 'mentorName': item.mentor_name} for item in students],
                 },
             },
             format='json',

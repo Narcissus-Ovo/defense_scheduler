@@ -33,6 +33,7 @@ def normalize_schedule_rules(raw):
         'formal_mentor_same_session': defense_type == 'formal',
         'chair_title': '教授' if defense_type == 'formal' else '副教授',
         'secretary_title': '讲师', 'prefer_senior': True,
+        'prefer_full_day_external': True,
         'grouping': 'secretary' if defense_type == 'formal' else 'supervisor',
         'campus_start_dates': {},
         'soft_weights': {
@@ -41,10 +42,14 @@ def normalize_schedule_rules(raw):
             'avoid_cross_campus': config['softWeights']['avoidCrossCampus'],
             'external_mentor_concentration': config['softWeights']['externalMentorConcentration'],
             'prefer_academic_master_first': config['softWeights']['preferAcademicMasterFirst'],
+            'balance_software_participation': 100 if defense_type == 'formal' else 0,
         },
     }
     for key, value in defaults.items():
         rules.setdefault(key, value)
+    if not isinstance(rules['soft_weights'], dict):
+        raise ValidationError('soft_weights 必须是对象')
+    rules['soft_weights'] = {**defaults['soft_weights'], **rules['soft_weights']}
     from datetime import datetime
     starts = rules['campus_start_dates']
     if not isinstance(starts, dict) or any(key not in ('创新港', '兴庆') for key in starts):
@@ -61,7 +66,7 @@ def normalize_schedule_rules(raw):
     except (ValueError, TypeError):
         raise ValidationError('开始、结束及分校区日期必须有效，且校区日期需在本次排期范围内')
     for key in ('avoid_weekend', 'avoid_holiday', 'course_half_day_blocking', 'include_remarks',
-                'preserve_pre_defense_groups', 'formal_mentor_same_session'):
+                'preserve_pre_defense_groups', 'formal_mentor_same_session', 'prefer_full_day_external'):
         if not isinstance(rules[key], bool):
             raise ValidationError(f'{key} 必须为布尔值')
     if 'avoid_supervisor' in rules and not isinstance(rules['avoid_supervisor'], bool):

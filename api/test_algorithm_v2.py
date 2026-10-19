@@ -4,7 +4,7 @@ from collections import Counter
 
 from django.test import SimpleTestCase, TestCase
 
-from algorithm import GroupDraft, SchedulingError, TimeRange, detect_global_conflicts, generate_schedule, parse_room, parse_student, parse_teacher
+from algorithm import GroupDraft, SchedulingError, TimeRange, assign_teachers, detect_global_conflicts, generate_schedule, parse_room, parse_student, parse_teacher
 from scheduling.policies import committee_violations, is_software_teacher, scenario_policy, teacher_can_role
 
 
@@ -92,6 +92,16 @@ class CommitteeV2Tests(SimpleTestCase):
         result = self.generate(self.rules('formal'), teachers)
         group = result['groups'][0]
         self.assertGreaterEqual(len(set([group['chair_id'], *group['expert_ids']]) & {6, 7, 8, 9}), 3)
+
+    def test_same_random_seed_reproduces_group_assignments(self):
+        students = [{'id': i, 'name': f'S{i}'} for i in range(1, 9)]
+        rules = self.rules('formal', group_size=2, random_seed=938475)
+
+        first = self.generate(rules, students=students)
+        second = self.generate(rules, students=students)
+
+        self.assertEqual(first['groups'], second['groups'])
+        self.assertEqual(first['random_seed'], 938475)
 
     def test_inactive_teacher_is_never_automatically_assigned(self):
         teachers = self.teachers()
@@ -311,9 +321,57 @@ class SchedulingPreferencesV2Tests(SimpleTestCase):
     def test_external_preference_never_overrides_staff_availability(self):
         result = self.external_schedule(same_day_staff_busy=True)
         self.assertEqual(result['groups'][1]['time'], '2026-10-13 09:00-12:00')
-        self.assertEqual({c['type'] for c in result['conflicts']}, {'external_mentor_concentration'})
+        conflict_types = {c['type'] for c in result['conflicts']}
+        self.assertIn('external_mentor_concentration', conflict_types)
+        self.assertIn('external_half_day_visit', conflict_types)
+        # 核心：可用性约束从未被软偏好打破——外院教师仍然被安排在 13 号
 
-    def software_schedule(self, balance):
+    def test_full_day_room_availability_uses_the_other_unblocked_half_day(self):
+        for busy_time, expected in (
+            ('2026-10-12 10:00-11:00', '2026-10-12 14:00-17:00'),
+            ('2026-10-12 15:00-16:00', '2026-10-12 09:00-12:00'),
+        ):
+            teachers = [
+                {'id': 1, 'name': '专家', 'title': '教授', 'roles': ['专家'],
+                 'available_time': [busy_time]},
+                {'id': 2, 'name': '秘书', 'title': '讲师', 'roles': ['秘书'],
+                 'available_time': [busy_time]},
+            ]
+            room = {'id': 1, 'name': '全天教室', 'available_time': ['2026-10-12 08:00-18:00']}
+            with self.subTest(busy_time=busy_time):
+                result = generate_schedule(
+                    teachers, [{'id': 1, 'name': '学生'}], [room],
+                    {'defense_type': 'pre', 'start_date': '2026-10-12', 'end_date': '2026-10-12',
+                     'group_size': 1, 'expert_count': 1, 'need_chair': False,
+                     'secretary_title': '讲师'},
+                )
+                self.assertEqual(result['groups'][0]['time'], expected)
+                self.assertEqual(result['conflicts'], [])
+
+    def test_formal_cross_campus_preference_survives_reviewer_load_sort(self):
+        teachers = [
+            parse_teacher({'id': i, 'name': f'T{i}', 'title': '教授',
+                           'is_software_teacher': True, 'roles': ['专家']})
+            for i in range(1, 9)
+        ]
+        teachers.append(parse_teacher({'id': 9, 'name': '秘书', 'title': '讲师', 'roles': ['秘书']}))
+        slot = TimeRange(datetime(2026, 10, 12, 9), datetime(2026, 10, 12, 12))
+        group = GroupDraft('G1', '创新港', [1], slot)
+        rules = {
+            'defense_type': 'formal', 'expert_count': 3, 'expert_count_includes_chair': True,
+            'need_chair': False, 'secretary_title': '讲师',
+            'soft_weights': {'avoid_cross_campus': 80},
+        }
+        teacher_day_campus = {
+            (teacher_id, slot.start.date()): {'兴庆'} for teacher_id in (1, 2, 3)
+        }
+        _, experts, _, _ = assign_teachers(
+            group, [parse_student({'id': 1, 'name': '学生'})], teachers, {}, rules,
+            teacher_day_campus=teacher_day_campus,
+        )
+        self.assertFalse({1, 2, 3} & set(experts))
+
+    def software_schedule(self, balance, seed=None):
         teachers = [{'id': i, 'name': f'T{i}', 'title': '教授', 'is_software_teacher': True,
                      'roles': ['主席', '专家']} for i in range(1, 9)]
         teachers.append({'id': 9, 'name': 'Secretary', 'title': '讲师', 'roles': ['秘书']})
@@ -322,6 +380,8 @@ class SchedulingPreferencesV2Tests(SimpleTestCase):
                  'group_size': 1, 'expert_count': 5, 'expert_count_includes_chair': True,
                  'need_chair': True, 'chair_title': '教授', 'secretary_title': '讲师',
                  'soft_weights': {'balance_software_participation': balance}}
+        if seed is not None:
+            rules['random_seed'] = seed
         return generate_schedule(teachers, students, [{'id': 1}], rules)
 
     def test_software_reviewers_rotate_with_at_most_one_count_difference(self):
@@ -329,6 +389,14 @@ class SchedulingPreferencesV2Tests(SimpleTestCase):
         loads = Counter(tid for group in result['groups'] for tid in [group['chair_id'], *group['expert_ids']])
         self.assertLessEqual(max(loads[i] for i in range(1, 9)) - min(loads[i] for i in range(1, 9)), 1)
         self.assertEqual(result['conflicts'], [])
+
+    def test_random_seed_changes_equal_load_reviewer_selection_reproducibly(self):
+        first = self.software_schedule(100, seed=21)
+        repeated = self.software_schedule(100, seed=21)
+        alternate = self.software_schedule(100, seed=22)
+
+        self.assertEqual(first['groups'], repeated['groups'])
+        self.assertNotEqual(first['groups'], alternate['groups'])
 
     def test_disabled_software_balance_keeps_stable_candidate_order(self):
         result = self.software_schedule(0)

@@ -18,6 +18,13 @@
           <el-option label="兴庆" value="兴庆" />
         </el-select>
       </el-form-item>
+      <el-form-item label="分组环节">
+        <el-select v-model="currentGroupDefenseType" style="width: 150px" @change="fetchData">
+          <el-option label="预答辩" value="预答辩" />
+          <el-option label="正式答辩" value="正式答辩" />
+          <el-option label="中期答辩" value="中期答辩" />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="handleSearch">
           <el-icon class="mr-1"><Search /></el-icon>搜索
@@ -79,7 +86,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="secretaryName" label="对应秘书" width="120" />
-      <el-table-column prop="currentGroup" label="当前分组" width="120">
+      <el-table-column prop="currentGroup" :label="`${currentGroupDefenseType}分组`" width="140">
         <template #default="{ row }">
           <span v-if="row.currentGroup" class="text-blue-500 font-medium">{{ row.currentGroup }}</span>
           <span v-else class="text-gray-400">未分组</span>
@@ -187,6 +194,7 @@ import PreparationGuide from '../../components/PreparationGuide.vue'
 import { computed, ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import type { DefenseType } from '../../domain/defense'
 import { Search, Plus, Upload, Delete } from '@element-plus/icons-vue'
 import ImportDialog from '../../components/ImportDialog.vue'
 import { listStudents, createStudent, updateStudent, deleteStudent, batchDeleteStudents } from '../../api/student'
@@ -208,6 +216,7 @@ const syncMentorName = (id?: number) => { form.mentorId = id || null; if (id) fo
 const syncSecretaryName = (id?: number) => { form.secretaryId = id || null; form.secretaryName = id ? relationTeachers.value.find(teacher => teacher.id === id)?.name || '' : '' }
 const allData = ref<Student[]>([])
 const filteredData = ref<Student[]>([])
+const currentGroupDefenseType = ref<DefenseType>('预答辩')
 const selectedIds = ref<number[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -284,7 +293,7 @@ const rules = reactive<FormRules>({
 const fetchData = async () => {
   loading.value = true
   try {
-    const data = await listStudents()
+    const data = await listStudents(currentGroupDefenseType.value)
     allData.value = data
     handleSearch()
   } catch (error) {

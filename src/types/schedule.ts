@@ -70,4 +70,6 @@ export interface ScheduleResult {
   rules?: { include_remarks?: boolean; includeRemarks?: boolean }
   /** 后端生成排期时的冲突快照；旧后端/Mock 模式下不存在 */
   conflicts?: ScheduleConflict[]
+  /** 随机种子（正式答辩专家随机补充时使用） */
+  randomSeed?: number | string
 }

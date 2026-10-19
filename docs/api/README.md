@@ -41,6 +41,7 @@ API 使用服务端 Token 认证，默认有效期为 12 小时（可由配置�
 | 教室 | `/rooms/`、`import_data/`、`batch_delete/` |
 | 规则 | `/rule-config/`，按 `defense_type` 读取和保存 |
 | 生成 | `POST /schedule/generate/`、`POST /schedule/generate-linked/` |
+| 生成前预检 | `POST /schedule/preflight/`，管理员提交 `{"rules": {...}}`，返回 `canGenerate`、`errors`、`warnings`、`stats`；不创建版本或写审计 |
 | 读取 | `GET /schedule/current/`、`GET /schedule/versions/` |
 | 编辑 | `POST /schedule/adjust/`、`POST /schedule/adjust-group/` |
 | 重验 | `POST /schedule/check-conflicts/` |
@@ -68,11 +69,14 @@ API 使用服务端 Token 认证，默认有效期为 12 小时（可由配置�
 
 ## 排期写入保护
 
-- 新生成请求提供 `request_key`，重复键的重试遵守幂等语义；同键不同规则返回冲突。联合生成的来源、日期与原子性见架构说明。
+- 新生成请求提供 `request_key`，重复键的重试遵守幂等语义；同键不同规则返回冲突。正式答辩随机种子保存到规则快照，响应提供 `randomSeed`；未指定种子的重试复用原方案，改变显式 `random_seed` 必须使用新请求键。联合生成的来源、日期与原子性见架构说明。
 - 编辑请求携带当前版本的 `expected_revision`。旧 revision 返回 409；手调缺少 revision 返回 428，并回滚操作。发布缺少或不匹配 revision 按发布接口当前实现返回 409。
 - `version_id` 标识排期版本实体，`revision` 表示该版本的修改序号，不能互换。
 - 已发布、已归档或跨版本编辑受到保护；出现 409 应刷新并重新确认修改，不能盲目覆盖或自动循环重试。
 - 发布时重验，仍有错误级冲突或空排期时拒绝发布。草稿和历史版本的读取、导出都必须确认所选版本。
+- 缺失、停用或不适用于本类型的导师资料在生成前阻止创建版本；预检通过不替代生成时重新检查。2026-10-19 整合版在导出 Excel／Word／PDF 前复核硬冲突，有错误 HTTP 400 拒绝；无硬冲突草稿可导出，历史版本使用所选快照。
+
+学生列表支持 `defense_type=pre|formal|mid` 及可选 `version_id`，返回只读 `currentGroup`。指定版本须属于所选类型且有查看权限；普通用户只使用可查看的已发布版本。操作日志增加只读 `details` 和 `authoritative`，客户端不能伪造服务端权威记录。
 
 发布请求示例（ID 和 revision 必须取自当前读取结果）：
 

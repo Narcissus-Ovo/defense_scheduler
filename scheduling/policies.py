@@ -268,4 +268,14 @@ def committee_violations(draft: Any, teachers: Any, rules: Mapping[str, Any]) ->
         if software_count < minimum:
             report("software_majority", f"正式答辩至少需要 {minimum} 位软件学院导师，实际 {software_count} 人", [],
                    assigned=software_count, min_required=minimum)
+
+    # 正式答辩：主席为外院专家时给出提示（院内主席优先，仅作 warning）
+    if defense == "formal" and chair is not None and chair in teacher_map:
+        chair_raw = teacher_map[chair]
+        if _boolean(_value(chair_raw, "is_external", "isExternal", default=False)):
+            chair_name = chair_raw.get("name") or str(chair)
+            report("external_chair_warning",
+                   f"主席 {chair_name} 为外院专家，建议优先选择校内合格正高担任主席",
+                   [chair], teacher_name=chair_name)
+
     return conflicts

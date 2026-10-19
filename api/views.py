@@ -14,7 +14,7 @@ from .authentication import login_attempt_key, check_login_attempts, record_logi
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Count, Max, Q
 from .schedule_integrity import schedule_write, audit, capture_export_groups, export_groups
 from django.http import HttpResponse
 from django.utils import timezone, translation
@@ -731,6 +731,51 @@ class StudentViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
         '参加答辩类型': 'defenseTypes',
     }
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        raw_defense_type = self.request.query_params.get('defense_type')
+        if not raw_defense_type:
+            return context
+
+        from rest_framework.exceptions import ValidationError
+
+        labels_to_values = {label: value for value, label in DEFENSE_TYPE_LABELS.items()}
+        defense_type = labels_to_values.get(raw_defense_type, raw_defense_type)
+        if defense_type not in DEFENSE_TYPE_LABELS:
+            raise ValidationError({'defense_type': '答辩类型必须为 pre、formal 或 mid'})
+
+        versions = ScheduleVersion.objects.filter(defense_type=defense_type)
+        if not is_admin_user(self.request.user):
+            versions = versions.filter(status='published')
+        version_id = self.request.query_params.get('version_id')
+        if version_id:
+            try:
+                version_id = int(version_id)
+            except (TypeError, ValueError):
+                raise ValidationError({'version_id': '版本 ID 格式不正确'})
+            version = versions.filter(pk=version_id).first()
+            if version is None:
+                raise ValidationError({'version_id': '所选答辩类型下不存在可查看的该版本'})
+        elif is_admin_user(self.request.user):
+            version = versions.filter(is_current=True).first()
+        else:
+            version = versions.order_by('-created_at').first()
+
+        group_map = {}
+        if version:
+            memberships = {}
+            for student_id, group_name in Group.objects.filter(
+                schedule_version=version,
+            ).values_list('students__id', 'group_id'):
+                if student_id is not None:
+                    memberships.setdefault(student_id, set()).add(group_name)
+            group_map = {
+                student_id: next(iter(group_names)) if len(group_names) == 1 else '多个分组'
+                for student_id, group_names in memberships.items()
+            }
+        context['current_group_map'] = group_map
+        return context
+
     def _normalize_student_no(self, processed_row):
         """学号统一转为字符串：Excel 数值单元格会被读成 int/float，需去掉小数尾巴"""
         raw = processed_row.get('studentNo')
@@ -899,6 +944,94 @@ class OperationLogViewSet(ModelViewSet):
     def clear(self, request):
         OperationLog.objects.filter(authoritative=False).delete()
         return Response({'message': '客户端记录已清空，服务端审计记录已保留'}, status=status.HTTP_200_OK)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # 非管理员只能看到自己的操作，看不到服务端审计日志
+        if not is_admin_user(request.user):
+            queryset = queryset.filter(
+                authoritative=False,
+                operator=request.user.get_username()
+            )
+
+        include_authoritative = request.query_params.get('include_authoritative', 'true').lower()
+        if include_authoritative == 'false':
+            queryset = queryset.filter(authoritative=False)
+
+        # 按模块筛选
+        module = request.query_params.get('module')
+        if module:
+            queryset = queryset.filter(module=module)
+
+        # 按操作类型筛选
+        log_type = request.query_params.get('type')
+        if log_type:
+            queryset = queryset.filter(type=log_type)
+
+        result = request.query_params.get('result')
+        if result:
+            queryset = queryset.filter(result=result)
+
+        # 关键词搜索（描述、操作人）
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(description__icontains=search)
+                | Q(operator__icontains=search)
+                | Q(type__icontains=search)
+            )
+
+        # 按日期范围筛选
+        start_date = request.query_params.get('start_date')
+        if start_date:
+            queryset = queryset.filter(created_at__date__gte=start_date)
+        end_date = request.query_params.get('end_date')
+        if end_date:
+            queryset = queryset.filter(created_at__date__lte=end_date)
+
+        # 分页：仅当显式传入 page 参数时才分页，否则返回完整列表（向后兼容）
+        has_pagination = request.query_params.get('page') is not None
+        if not has_pagination:
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        counts = queryset.aggregate(
+            total=Count('id'),
+            success=Count('id', filter=Q(result='成功')),
+            failed=Count('id', filter=Q(result='失败')),
+            audit=Count('id', filter=Q(authoritative=True)),
+        )
+        total = counts['total']
+        try:
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 15))
+        except (ValueError, TypeError):
+            page = 1
+            page_size = 15
+
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 15
+
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_queryset = queryset[start:end]
+
+        serializer = self.get_serializer(page_queryset, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': total,
+            'page': page,
+            'page_size': page_size,
+            'stats': {
+                'total': total,
+                'success': counts['success'],
+                'failed': counts['failed'],
+                'audit': counts['audit'],
+            },
+        })
 
 
 

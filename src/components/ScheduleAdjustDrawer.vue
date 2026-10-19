@@ -1,5 +1,28 @@
 <template>
-  <el-drawer v-model="visible" :title="drawerTitle" size="640px" destroy-on-close>
+  <el-drawer v-model="visible" size="640px" destroy-on-close>
+    <template #header>
+      <div class="drawer-header">
+        <span class="drawer-title">{{ drawerTitle }}</span>
+        <el-tag
+          v-if="errorCount > 0"
+          type="danger"
+          effect="light"
+          size="small"
+          class="conflict-tag"
+        >
+          {{ errorCount }} 项硬冲突
+        </el-tag>
+        <el-tag
+          v-else-if="warningCount > 0"
+          type="warning"
+          effect="light"
+          size="small"
+          class="conflict-tag"
+        >
+          {{ warningCount }} 项警告
+        </el-tag>
+      </div>
+    </template>
     <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" :disabled="readonly">
       <el-form-item label="组名" prop="groupName">
         <el-input v-model="form.groupName" />
@@ -92,6 +115,8 @@ const props = defineProps<{
   classrooms: { campus: '创新港' | '兴庆'; name: string }[]
   saving?: boolean
   readonly?: boolean
+  conflictCount?: number
+  errorCount?: number
 }>()
 
 const emit = defineEmits<{
@@ -209,6 +234,12 @@ const drawerTitle = computed(() => {
   return `调整排期 - ${props.group.groupName}`
 })
 
+const warningCount = computed(() => {
+  const total = props.conflictCount || 0
+  const errors = props.errorCount || 0
+  return Math.max(0, total - errors)
+})
+
 const handleSave = async () => {
   if (props.readonly) return
   if (!formRef.value) return
@@ -219,3 +250,20 @@ const handleSave = async () => {
 }
 </script>
 
+<style scoped>
+.drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.drawer-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #303133;
+}
+
+.conflict-tag {
+  margin-left: 4px;
+}
+</style>

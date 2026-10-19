@@ -27,16 +27,15 @@
       <el-button v-if="canManage" type="primary" :loading="loading" @click="emit('generate')">
         {{ hasResult ? '生成新草稿' : '生成排期草稿' }}
       </el-button>
-      <el-dropdown trigger="click" :disabled="loading" @command="command => command === 'refresh' ? emit('refresh') : emit('check-conflicts')">
+      <el-dropdown trigger="click" :disabled="loading" @command="command => emit('refresh')">
         <el-button :disabled="loading">更多操作 ▾</el-button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="refresh">刷新安排</el-dropdown-item>
-            <el-dropdown-item command="check" :disabled="!hasResult">重新检测冲突</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <el-button type="primary" plain :disabled="!hasResult" @click="emit('export')">
+      <el-button type="primary" plain :disabled="!hasResult || loading" @click="emit('export')">
         <template #icon><el-icon><Download /></el-icon></template>
         导出 Excel/Word/PDF
       </el-button>
@@ -62,7 +61,6 @@ const emit = defineEmits<{
   (e: 'update:viewMode', v: 'agenda' | 'card' | 'table'): void
   (e: 'generate'): void
   (e: 'refresh'): void
-  (e: 'check-conflicts'): void
   (e: 'export'): void
 }>()
 </script>

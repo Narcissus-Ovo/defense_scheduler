@@ -3,12 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date
 from math import ceil
+import random
 import re
+import secrets
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from scheduling.continuity import formal_mentor_session_violations, inherited_group_labels
 from scheduling.policies import committee_member_target, committee_violations, is_software_teacher, teacher_can_role, secretary_is_qualified
-from scheduling.preferences import external_visit_cost, preference_notices, software_reviewer_load
+from scheduling.preferences import external_full_day_gain, external_visit_cost, preference_notices, software_reviewer_load
 
 
 TIME_FMT = "%Y-%m-%d %H:%M"
@@ -98,6 +100,18 @@ def generate_schedule(
     parsed_students = [parse_student(s) for s in students]
     parsed_rooms = [parse_room(r) for r in rooms]
 
+    # Keep generated randomness reproducible by returning and persisting its seed.
+    # 仅正式答辩生成随机种子；预答辩用固定种子 0 确保确定性，也避免保存无用种子。
+    # 使用 32 位种子，确保前后端（JS Number 53 位安全整数范围内）精度一致。
+    seed = rules.get('random_seed')
+    if seed is None and rules.get('defense_type') == 'formal':
+        seed = secrets.randbits(32)
+    elif seed is not None:
+        seed = int(seed)
+    else:
+        seed = 0
+    rng = random.Random(seed)
+
     if rules.get('defense_type') == 'pre' and rules.get('refresh_secretary_bindings'):
         # A new linked plan explicitly establishes fresh pre-defense bindings.
         # Existing historical plan snapshots remain the caller's responsibility.
@@ -119,6 +133,7 @@ def generate_schedule(
     reviewer_load: Dict[int, int] = {}
     secretary_load: Dict[int, int] = {}
     all_supervisor_ids = {s.supervisor_id for s in parsed_students if s.supervisor_id is not None}
+    all_secretary_ids = {s.secretary_id for s in parsed_students if s.secretary_id is not None}
 
     labels = inherited_group_labels(grouped_students, rules)
     for group_label, student_batch in zip(labels, grouped_students):
@@ -139,7 +154,8 @@ def generate_schedule(
                                time_slot=slot, room_id=room.id)
             chair, experts, secretary, notices = assign_teachers(
                 trial, student_batch, parsed_teachers, teacher_busy, rules, teacher_day_campus,
-                reviewer_load, all_supervisor_ids, secretary_load)
+                reviewer_load, all_supervisor_ids, secretary_load, rng,
+                all_secretary_ids=all_secretary_ids)
             trial.chair_id, trial.expert_ids, trial.secretary_id = chair, experts, secretary
             notices.extend(committee_violations(trial, parsed_teachers, rules))
             # Required mentors may exceed the configured committee minimum.
@@ -158,15 +174,18 @@ def generate_schedule(
             # session. Future mentor assignments are verified globally below.
             mentor_session_penalty = 0
             if rules.get('defense_type') == 'formal' and rules.get('formal_mentor_same_session'):
-                for student in student_batch:
-                    occupied = teacher_busy.get(student.supervisor_id, [])
+                for mentor_id in all_supervisor_ids:
+                    occupied = teacher_busy.get(mentor_id, [])
                     if occupied and not any(t.start == slot.start and t.end == slot.end for t in occupied):
                         mentor_session_penalty += 1
             visit_cost = external_visit_cost(trial, student_batch, parsed_teachers, teacher_busy, rules)
-            score = (hard, mentor_session_penalty, len(notices), int(bool(campus and room.campus != campus)), visit_cost)
+            full_day_gain = external_full_day_gain(trial, parsed_teachers, teacher_busy, rules)
+            score = (hard, mentor_session_penalty, len(notices),
+                     int(bool(campus and room.campus != campus)),
+                     -full_day_gain, visit_cost)
             if best_score is None or score < best_score:
                 best, best_score = (trial, notices), score
-            if score == (0, 0, 0, 0, 0):
+            if score == (0, 0, 0, 0, 0, 0):
                 break
         if best is not None:
             group, notices = best
@@ -188,10 +207,13 @@ def generate_schedule(
 
     conflicts.extend(detect_global_conflicts(drafts, parsed_students, parsed_teachers, parsed_rooms, rules))
 
-    return {
+    result = {
         "groups": [serialize_group(d) for d in drafts],
         "conflicts": deduplicate_conflicts(conflicts),
     }
+    if rules.get('defense_type') == 'formal':
+        result["random_seed"] = seed
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -344,7 +366,8 @@ def build_candidate_slots(rules: Dict[str, Any], rooms: Sequence[Room]) -> List[
             time_range = parse_time_range(raw_slot)
             if not slot_date_is_allowed(time_range.start.date(), rules, excluded_dates):
                 continue
-            slot_map[(time_range.start, time_range.end)] = time_range
+            for slot in room_window_schedule_slots(time_range):
+                slot_map[(slot.start, slot.end)] = slot
 
     if slot_map:
         return sorted(slot_map.values(), key=lambda s: (s.start, s.end))
@@ -627,6 +650,8 @@ def assign_teachers(
     reviewer_load: Optional[Dict[int, int]] = None,
     all_supervisor_ids: Optional[set] = None,
     secretary_load: Optional[Dict[int, int]] = None,
+    rng: Optional[random.Random] = None,
+    all_secretary_ids: Optional[set] = None,
 ) -> Tuple[Optional[int], List[int], Optional[int], List[dict]]:
     conflicts: List[dict] = []
     slot = group.time_slot
@@ -634,6 +659,10 @@ def assign_teachers(
     need_chair = bool(rules.get("need_chair", False))
     policy = get_supervisor_policy(rules)
     soft = rules.get("soft_weights") or {}
+    is_formal = rules.get('defense_type') == 'formal'
+
+    if rng is None:
+        rng = random.Random()
 
     supervisor_ids = {s.supervisor_id for s in students_in_group if s.supervisor_id is not None}
     all_supervisor_ids = all_supervisor_ids if all_supervisor_ids is not None else supervisor_ids
@@ -648,6 +677,7 @@ def assign_teachers(
             desired_secretary_counts[student.secretary_id] = (
                 desired_secretary_counts.get(student.secretary_id, 0) + 1
             )
+    other_group_secretary_ids = (all_secretary_ids or set()) - set(desired_secretary_counts)
 
     teacher_name_map = {t.id: t.name for t in teachers}
     available_teachers = [
@@ -665,28 +695,55 @@ def assign_teachers(
         available_teachers.sort(key=lambda t: title_rank(t.title), reverse=True)
 
     # 软权重：减少跨校区——当天已在其他校区有安排的教师排到候选队尾
-    if (
-        int(soft.get("avoid_cross_campus", 0) or 0) > 0
-        and slot is not None
-        and group.campus
-        and teacher_day_campus
-    ):
-        def cross_campus_penalty(teacher: Teacher) -> int:
-            campuses = teacher_day_campus.get((teacher.id, slot.start.date()))
-            if campuses and group.campus not in campuses:
-                return 1
-            return 0
+    cross_campus_weight = int(soft.get("avoid_cross_campus", 0) or 0)
 
+    def cross_campus_penalty(teacher: Teacher) -> int:
+        if cross_campus_weight <= 0 or slot is None or not group.campus or not teacher_day_campus:
+            return 0
+        campuses = teacher_day_campus.get((teacher.id, slot.start.date()))
+        return int(bool(campuses and group.campus not in campuses))
+
+    if cross_campus_weight > 0 and slot is not None and group.campus and teacher_day_campus:
         available_teachers.sort(key=cross_campus_penalty)
 
-    if rules.get('defense_type') == 'formal' and rules.get('expert_count_includes_chair'):
+    # 软优化：外院教师优先整天安排——当天已有另半场次的外院教师排到候选队首
+    if rules.get('prefer_full_day_external', True) and slot is not None:
+        def external_full_day_priority(teacher: Teacher) -> int:
+            """外院教师排序优先级：当天另半场次(0) < 当天同半场次(1) < 新到访日(2) < 本院教师(3)。
+            数值越小越优先被选中，促进外院教师整天安排。
+            """
+            if not teacher.is_external:
+                return 3  # 本院教师不参与此排序维度
+            day = slot.start.date()
+            is_morning = slot.start.hour < 12
+            same_day_slots = [s for s in teacher_busy.get(teacher.id, [])
+                              if s.start.date() == day]
+            if not same_day_slots:
+                return 2  # 当天还没有场次，新到访日
+            has_other_half = any((s.start.hour < 12) != is_morning for s in same_day_slots)
+            if has_other_half:
+                return 0  # 当天已有另半场次，选上就成整天——最优先
+            return 1  # 当天已有同半场次，集中在同半天——次优先
+
+        available_teachers.sort(key=external_full_day_priority)
+
+    if is_formal and rules.get('expert_count_includes_chair'):
         # Stable workload ordering rotates internal reviewers across sessions.
         # Software-college reviewers take priority to satisfy the majority rule.
         loads = reviewer_load if reviewer_load is not None else {tid: len(slots) for tid, slots in teacher_busy.items()}
+        balance_weight = int((rules.get("soft_weights") or {}).get("balance_software_participation", 0) or 0)
+        # Randomize only among equally loaded eligible reviewers; one shared
+        # jitter would cancel out of every sort key and have no effect.
+        jitter_by_teacher = {
+            teacher.id: rng.random() * 0.9 if balance_weight > 0 else 0.0
+            for teacher in available_teachers
+        }
         available_teachers.sort(key=lambda t: (
             not is_software_teacher(t.raw),
             mentor_session_required and t.id not in peer_mentor_ids,
+            cross_campus_penalty(t),
             software_reviewer_load(t, loads, rules),
+            jitter_by_teacher[t.id] if balance_weight > 0 else 0.0,
         ))
 
     secretary_candidates = [t for t in available_teachers
@@ -740,6 +797,7 @@ def assign_teachers(
             # 优先让组内导师专家中符合职称要求者担任组长/主席（真实安排的常见做法）
             chair = next(
                 (t for t in available_teachers if t.id in supervisor_ids
+                 and t.id not in other_group_secretary_ids
                  and t.id != reserved_secretary_id and teacher_can_role(t.raw, 'chair')
                  and meets_chair_requirement(t, rules)),
                 None,
@@ -747,9 +805,21 @@ def assign_teachers(
             if chair is not None:
                 if chair.id in expert_ids:
                     expert_ids.remove(chair.id)
+        if chair is None and is_formal:
+            # 正式主席按外院标记优先选择校内合格正高；软件学院人数另行检查。
+            chair = next(
+                (t for t in available_teachers if t.id not in expert_ids
+                 and t.id not in other_group_secretary_ids
+                 and t.id != reserved_secretary_id and teacher_can_role(t.raw, 'chair')
+                 and meets_chair_requirement(t, rules)
+                  and not t.is_external
+                 and not conflicts_with_selected_teachers(t.id, expert_ids, teachers)),
+                None,
+            )
         if chair is None:
             chair = next(
                 (t for t in available_teachers if t.id not in expert_ids
+                 and t.id not in other_group_secretary_ids
                  and t.id != reserved_secretary_id and teacher_can_role(t.raw, 'chair')
                  and meets_chair_requirement(t, rules)
                  and not conflicts_with_selected_teachers(t.id, expert_ids, teachers)),
@@ -782,7 +852,8 @@ def assign_teachers(
             if len(expert_ids) >= needed_experts:
                 break
             if (teacher.id not in peer_mentor_ids or teacher.id == reserved_secretary_id
-                    or teacher.id in expert_ids or not teacher_can_role(teacher.raw, 'expert')):
+                    or teacher.id in other_group_secretary_ids or teacher.id in expert_ids
+                    or not teacher_can_role(teacher.raw, 'expert')):
                 continue
             outside = not is_software_teacher(teacher.raw)
             if outside and outside_used >= outside_limit:
@@ -792,12 +863,19 @@ def assign_teachers(
             expert_ids.append(teacher.id)
             outside_used += int(outside)
 
-    for teacher in available_teachers:
+    # A linked pre-defense plan must leave other groups' mentors available for
+    # their own students before using them as optional reviewers. In particular,
+    # the external full-day preference must not consume a future required seat.
+    optional_reviewers = sorted(available_teachers, key=lambda teacher: (
+        bool(reserve_formal and policy == "same_group" and teacher.id in peer_mentor_ids),
+    ))
+    for teacher in optional_reviewers:
         if len(expert_ids) >= needed_experts:
             break
         if teacher.id in expert_ids:
             continue
-        if teacher.id == reserved_secretary_id or not teacher_can_role(teacher.raw, 'expert'):
+        if (teacher.id == reserved_secretary_id or teacher.id in other_group_secretary_ids
+                or not teacher_can_role(teacher.raw, 'expert')):
             continue
         if policy == "avoid" and teacher.id in supervisor_ids:
             continue
@@ -1311,15 +1389,29 @@ def parse_room_available_slots(
         return []
     if room.available_time or room.raw.get('availability_restricted'):
         # 教室可用时段必须落在排期日期范围内（真实借用记录常含往年/范围外日期）
-        return [
-            time_range
-            for time_range in (parse_time_range(raw) for raw in room.available_time)
-            if start <= time_range.start < end
-            and slot_date_is_allowed(time_range.start.date(), rules, excluded_dates)
-        ]
+        slots = []
+        for time_range in (parse_time_range(raw) for raw in room.available_time):
+            if not (start <= time_range.start < end
+                    and slot_date_is_allowed(time_range.start.date(), rules, excluded_dates)):
+                continue
+            slots.extend(room_window_schedule_slots(time_range))
+        return slots
 
     # Fallback to all candidate slots if room availability is not specified.
     return [slot for slot in candidate_slots if start <= slot.start < end]
+
+
+def room_window_schedule_slots(window: TimeRange) -> List[TimeRange]:
+    """Use standard half-day slots inside broad room availability windows."""
+    slots = []
+    day = window.start.date()
+    while day <= window.end.date():
+        for hour in (9, 14):
+            slot = default_slot(day, hour, 0)
+            if window.start <= slot.start and slot.end <= window.end:
+                slots.append(slot)
+        day += timedelta(days=1)
+    return slots or [window]
 
 
 def parse_time_range(raw: str) -> TimeRange:

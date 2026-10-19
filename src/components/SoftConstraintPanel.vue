@@ -15,6 +15,34 @@
     </div>
 
     <div v-else class="space-y-6">
+      <!-- 软件学院评审次数均衡 - 突出展示 -->
+      <div v-if="softwareImbalanceConflict" class="software-imbalance-highlight p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <div class="flex items-center gap-2 mb-2">
+          <el-icon class="text-amber-600"><WarningFilled /></el-icon>
+          <span class="text-sm font-bold text-amber-800">软件学院评审次数均衡</span>
+          <el-tag size="small" type="warning" effect="light">优化目标</el-tag>
+        </div>
+        <div class="text-xs text-amber-700 space-y-1">
+          <div class="flex items-start gap-2">
+            <span class="text-amber-500 flex-shrink-0">差异：</span>
+            <span>{{ imbalanceDetail.diff }} 次</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-amber-500 flex-shrink-0">最多：</span>
+            <span>{{ imbalanceDetail.maxCount }} 次 · {{ imbalanceDetail.maxTeachers }}</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-amber-500 flex-shrink-0">最少：</span>
+            <span>{{ imbalanceDetail.minCount }} 次 · {{ imbalanceDetail.minTeachers }}</span>
+          </div>
+        </div>
+        <div class="mt-2 pt-2 border-t border-amber-200">
+          <p class="text-[11px] text-amber-600">
+            次数均衡为优化目标，不计入总分，可在资格与时间允许时继续轮换均衡。
+          </p>
+        </div>
+      </div>
+
       <!-- 总分展示 -->
       <div class="score-summary text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
         <div class="text-xs text-blue-600 font-medium mb-1">已评估指标得分</div>
@@ -80,12 +108,48 @@
 </template>
 
 <script setup lang="ts">
-import { Histogram, InfoFilled } from '@element-plus/icons-vue'
+import { computed } from 'vue'
+import { Histogram, InfoFilled, WarningFilled } from '@element-plus/icons-vue'
 import type { OptimizationSummary } from '../types/optimization'
+import type { ScheduleConflict } from '../types/conflict'
 
-defineProps<{
+const props = defineProps<{
   summary: OptimizationSummary | null
+  conflicts?: ScheduleConflict[]
 }>()
+
+// 软件学院评审次数均衡冲突
+const softwareImbalanceConflict = computed(() => {
+  if (!props.conflicts || !props.conflicts.length) return null
+  return props.conflicts.find(c => c.type === '软件学院评审次数均衡提示') || null
+})
+
+const imbalanceDetail = computed(() => {
+  const conflict = softwareImbalanceConflict.value
+  if (!conflict) return { diff: 0, maxCount: 0, maxTeachers: '', minCount: 0, minTeachers: '' }
+  const details = conflict.details?.softwareParticipationImbalance
+  if (details) {
+    return {
+      diff: details.difference,
+      maxCount: details.maxCount,
+      maxTeachers: details.maxTeachers.join('、'),
+      minCount: details.minCount,
+      minTeachers: details.minTeachers.join('、')
+    }
+  }
+  const reason = conflict.reason || ''
+  // 解析格式："软件学院教师评审次数差异为 X 次（最多 Y 次：A、B；最少 Z 次：C、D）。..."
+  const diffMatch = reason.match(/差异为\s*(\d+)\s*次/)
+  const maxMatch = reason.match(/最多\s*(\d+)\s*次[：:]\s*([^；;]+)/)
+  const minMatch = reason.match(/最少\s*(\d+)\s*次[：:]\s*([^）)。]+)/)
+  return {
+    diff: diffMatch ? parseInt(diffMatch[1], 10) : 0,
+    maxCount: maxMatch ? parseInt(maxMatch[1], 10) : 0,
+    maxTeachers: maxMatch ? maxMatch[2].trim() : '',
+    minCount: minMatch ? parseInt(minMatch[1], 10) : 0,
+    minTeachers: minMatch ? minMatch[2].trim() : ''
+  }
+})
 </script>
 
 <style scoped>

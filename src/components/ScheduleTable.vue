@@ -1,5 +1,13 @@
 <template>
-  <el-table :data="groups" border style="width: 100%" :scrollbar-always-on="true" :row-class-name="rowClassName">
+  <el-table
+    ref="tableRef"
+    :data="groups"
+    border
+    style="width: 100%"
+    :scrollbar-always-on="true"
+    :row-class-name="rowClassName"
+    row-key="id"
+  >
     <el-table-column prop="groupName" label="组名" width="140" fixed="left" />
     <el-table-column label="状态" width="90">
       <template #default="{ row }">
@@ -58,28 +66,37 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch, nextTick } from 'vue'
 import { getScheduleExperts } from '../domain/scheduleExperts'
 import type { ScheduleGroup } from '../types/schedule'
 import { getMentorColor } from '../utils/color'
 import ConflictTag from './ConflictTag.vue'
+import type { ElTable } from 'element-plus'
 
 const props = defineProps<{
   groups: ScheduleGroup[]
   groupStatus: Record<number, 'normal' | 'warning' | 'error'>
   canManage?: boolean
+  highlightedGroupIds?: number[]
 }>()
 
 const emit = defineEmits<{
   (e: 'adjust', group: ScheduleGroup): void
 }>()
 
+const tableRef = ref<InstanceType<typeof ElTable> | null>(null)
+
 const getStatus = (groupId: number) => props.groupStatus[groupId] || 'normal'
+
+const isHighlighted = (groupId: number) => (props.highlightedGroupIds || []).includes(groupId)
 
 const rowClassName = ({ row }: { row: ScheduleGroup }) => {
   const s = getStatus(row.id)
-  if (s === 'error') return 'row-error'
-  if (s === 'warning') return 'row-warning'
-  return ''
+  const classes: string[] = []
+  if (s === 'error') classes.push('row-error')
+  else if (s === 'warning') classes.push('row-warning')
+  if (isHighlighted(row.id)) classes.push('row-highlighted')
+  return classes.join(' ')
 }
 
 const getStudentTagStyle = (mentorName: string) => {
@@ -90,13 +107,48 @@ const getStudentTagStyle = (mentorName: string) => {
     color: '#374151'
   }
 }
+
+// 高亮时滚动到第一个高亮行
+watch(() => props.highlightedGroupIds || [], async (ids) => {
+  if (!ids.length) return
+  await nextTick()
+  const firstId = ids[0]
+  const rowIndex = props.groups.findIndex(g => g.id === firstId)
+  if (rowIndex >= 0 && tableRef.value) {
+    tableRef.value.scrollTo({ top: rowIndex * 48, behavior: 'smooth' })
+  }
+}, { flush: 'post' })
 </script>
 
 <style scoped>
-.row-error td {
+:deep(.row-error td) {
   background-color: #fef2f2;
 }
-.row-warning td {
+:deep(.row-warning td) {
   background-color: #fffbeb;
+}
+:deep(.row-highlighted td) {
+  animation: tableRowHighlight 2s ease-out;
+  background-color: #edf3f9 !important;
+  border-top: 2px solid #00467f;
+  border-bottom: 2px solid #00467f;
+}
+:deep(.row-highlighted td:first-child) {
+  border-left: 2px solid #00467f;
+}
+:deep(.row-highlighted td:last-child) {
+  border-right: 2px solid #00467f;
+}
+
+@keyframes tableRowHighlight {
+  0% {
+    background-color: #d6e6f2 !important;
+  }
+  50% {
+    background-color: #e8f0f7 !important;
+  }
+  100% {
+    background-color: #edf3f9 !important;
+  }
 }
 </style>
