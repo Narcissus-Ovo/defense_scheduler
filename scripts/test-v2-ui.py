@@ -7,6 +7,7 @@ import os
 import sys
 import tempfile
 import json
+import re
 import socket
 import subprocess
 import time
@@ -95,7 +96,7 @@ def smoke_test():
             if secretary_name:
                 dialog.locator('.el-checkbox').filter(has_text='保留该学生的秘书关系').click()
                 expect(dialog.get_by_role('checkbox', name='保留该学生的秘书关系')).not_to_be_checked()
-                choose_option(dialog.locator('.el-select').nth(2), secretary_name)
+                choose_option(dialog.locator('.el-select').nth(2), re.compile(rf'^{re.escape(secretary_name)}（'))
             with page.expect_response(lambda response: '/api/schedule/adjust/' in response.url and response.request.method == 'POST') as response:
                 dialog.get_by_role('button', name='确认移动', exact=True).click()
             assert response.value.ok, response.value.text()
@@ -134,13 +135,13 @@ def smoke_test():
             page.wait_for_load_state('networkidle')
             page.get_by_role('button', name='生成排期草稿', exact=True).click()
             preview = page.get_by_role('dialog', name='生成前，确认这次安排', exact=True)
-            expect(preview).to_contain_text('专家 4 人')
+            expect(preview).to_contain_text('专家 5 人')
             preview.get_by_role('button', name='确认生成草稿', exact=True).click()
             expect(page.get_by_role('button', name='校验并发布', exact=True)).to_be_enabled(timeout=60000)
             generated_pre = current('pre')
             assert len(generated_pre['groups']) == 2, generated_pre
             assert not [conflict for conflict in generated_pre['conflicts'] if conflict['level'] == 'error'], generated_pre['conflicts']
-            assert all(len({group['chairId'], *[teacher['id'] for teacher in group['teachers']]}) == 4 for group in generated_pre['groups'])
+            assert all(len({group['chairId'], *[teacher['id'] for teacher in group['teachers']]}) == 5 for group in generated_pre['groups'])
             page.get_by_role('button', name='校验并发布', exact=True).click()
             expect(page.get_by_text('已发布 · 内容已锁定', exact=True)).to_be_visible()
             published_pre = current('pre')
@@ -197,8 +198,11 @@ def smoke_test():
             page.get_by_text('当前版本（下拉可查看历史）', exact=True).click()
             page.get_by_role('option', name='v1 · 已发布', exact=True).click()
             page.wait_for_load_state('networkidle')
+            expect(page.get_by_text('已发布 · 内容已锁定', exact=True)).to_be_visible()
+            expect(page.get_by_role('button', name='生成新草稿', exact=True)).to_be_enabled()
             page.get_by_role('button', name='导出 Excel/Word/PDF', exact=True).click()
             export_dialog = page.get_by_role('dialog', name='导出确认', exact=True)
+            expect(export_dialog).to_be_visible()
             export_dialog.locator('.el-radio').filter(has_text='PDF · 打印或保存为 PDF').click()
             with page.expect_popup() as popup_event:
                 export_dialog.get_by_role('button', name='继续导出', exact=True).click()
@@ -207,7 +211,7 @@ def smoke_test():
             expect(popup.get_by_role('button', name='打印或保存为 PDF', exact=True)).to_be_visible()
             expect(popup.locator('.meta')).to_contain_text('版本 1 · 已发布')
             expect(popup.locator('.group')).to_have_count(2)
-            expect(popup.locator('body')).to_contain_text('共 4 人')
+            expect(popup.locator('body')).to_contain_text('共 5 人')
             expect(popup.locator('body')).to_contain_text('PDF 学生备注 <仅文本>')
             assert popup.locator('img,script').count() == 0
             popup.evaluate('window.print = () => { window.__printRequested = true }')
@@ -272,6 +276,11 @@ def run_with_fixture():
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait(timeout=5)
+    # Windows may briefly accept a connection while the terminated process's
+    # listener is being torn down. Keep the check bounded and still reject leaks.
+    deadline = time.monotonic() + 3
+    while listening() and time.monotonic() < deadline:
+        time.sleep(0.1)
     assert not listening(), 'fixture server must release its port when the test finishes'
     print('PASS fixture lifecycle: direct child stopped and test port released.', flush=True)
 

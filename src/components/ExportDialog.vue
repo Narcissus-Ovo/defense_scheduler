@@ -6,6 +6,22 @@
     destroy-on-close
   >
     <div class="space-y-4">
+      <!-- 版本信息展示 -->
+      <div v-if="versionInfo" class="version-info p-3 rounded-md" :class="versionInfo.isCurrent ? 'bg-blue-50 border border-blue-200' : 'bg-orange-50 border border-orange-200'">
+        <div class="flex items-center gap-2">
+          <el-icon :class="versionInfo.isCurrent ? 'text-blue-600' : 'text-orange-600'"><Document /></el-icon>
+          <div class="text-sm">
+            <span class="font-bold" :class="versionInfo.isCurrent ? 'text-blue-700' : 'text-orange-700'">
+              导出版本：v{{ versionInfo.versionNumber }}（{{ versionInfo.status === 'published' ? '已发布' : '草稿' }}）
+            </span>
+            <span v-if="versionInfo.isCurrent" class="text-blue-600 ml-2">· 当前版本</span>
+          </div>
+        </div>
+        <p v-if="!versionInfo.isCurrent" class="text-xs text-orange-600 mt-2">
+          正在导出历史版本，非当前草稿。如需导出最新内容，请切换到当前版本。
+        </p>
+      </div>
+
       <div class="grid grid-cols-2 gap-4">
         <div class="p-3 bg-gray-50 rounded">
           <div class="text-xs text-gray-500">答辩类型</div>
@@ -30,8 +46,8 @@
       <div v-if="stats.errorCount > 0" class="p-4 bg-red-50 border border-red-200 rounded flex items-start gap-3">
         <el-icon class="text-red-500 mt-1"><WarningFilled /></el-icon>
         <div>
-          <div class="text-red-700 font-bold text-sm">当前排期存在硬冲突</div>
-          <div class="text-red-600 text-xs mt-1">系统检测到 {{ stats.errorCount }} 处严重冲突，建议先处理后再导出。是否仍然继续导出？</div>
+          <div class="text-red-700 font-bold text-sm">当前排期存在硬冲突，禁止导出</div>
+          <div class="text-red-600 text-xs mt-1">检测到 {{ stats.errorCount }} 处硬冲突，请先处理并重新复核。</div>
         </div>
       </div>
 
@@ -61,7 +77,7 @@
     <template #footer>
       <div class="flex justify-end gap-3">
         <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm">继续导出</el-button>
+        <el-button type="primary" :disabled="stats.errorCount > 0" @click="handleConfirm">继续导出</el-button>
       </div>
     </template>
   </el-dialog>
@@ -69,7 +85,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { WarningFilled, InfoFilled } from '@element-plus/icons-vue'
+import { WarningFilled, InfoFilled, Document } from '@element-plus/icons-vue'
 import type { ExportOptions } from '../types/export'
 
 const props = defineProps<{
@@ -81,6 +97,11 @@ const props = defineProps<{
     conflictCount: number
     errorCount: number
     warningCount: number
+  }
+  versionInfo?: {
+    versionNumber: number
+    status: 'draft' | 'published'
+    isCurrent: boolean
   }
 }>()
 
@@ -97,6 +118,7 @@ const visible = computed({
 })
 
 const handleConfirm = () => {
+  if (props.stats.errorCount > 0) return
   visible.value = false
   emit('confirm', format.value)
 }

@@ -19,9 +19,173 @@ class ScheduleApplication:
     def _normalize_rules(self, rules):
         return normalize_schedule_rules(rules)
 
+    def preflight_check(self, rules):
+        """生成排期前的资料预检，返回可生成状态、错误、警告和统计信息。"""
+        rules = self._normalize_rules(rules)
+        payload, notices = self._build_algorithm_input(
+            rules['defense_type'], self._extract_rule_date_range(rules), rules)
+
+        defense_label = DEFENSE_TYPE_LABELS[rules['defense_type']]
+
+        # 收集所有相关学生ID，用于批量查询姓名
+        all_student_ids = set()
+        for notice in notices:
+            for rid in notice.get('related_ids', []):
+                all_student_ids.add(rid)
+        for s in payload['students']:
+            all_student_ids.add(s['id'])
+
+        student_names_by_id = {}
+        if all_student_ids:
+            student_names_by_id = dict(
+                Student.objects.filter(id__in=all_student_ids).values_list('id', 'name')
+            )
+
+        # 阻断生成的错误类型
+        ERROR_TYPES = {'mentor_missing'}
+        if rules.get('policy_version', 1) >= 2:
+            ERROR_TYPES.update({'mentor_not_found', 'mentor_unavailable_for_defense'})
+
+        # 按类型聚合 notices
+        aggregated = {}
+        for notice in notices:
+            notice_type = notice.get('type', 'unknown')
+            if notice_type not in aggregated:
+                aggregated[notice_type] = {
+                    'type': notice_type,
+                    'student_ids': [],
+                    'teacher_names': [],
+                    'count': 0,
+                }
+            agg = aggregated[notice_type]
+            related_ids = notice.get('related_ids', [])
+            agg['student_ids'].extend(related_ids)
+            teacher_name = notice.get('teacher_name')
+            if teacher_name and teacher_name not in agg['teacher_names']:
+                agg['teacher_names'].append(teacher_name)
+            agg['count'] += len(related_ids) if related_ids else 1
+
+        # 各类型的描述与建议
+        TYPE_INFO = {
+            'mentor_missing': {
+                'description': '学生尚未设置导师',
+                'suggestion': '前往学生名单补充导师信息',
+                'has_students': True,
+            },
+            'mentor_not_found': {
+                'description': '导师姓名在教师表中不存在',
+                'suggestion': '核对导师姓名是否与教师表完全一致',
+                'has_students': True,
+            },
+            'mentor_unavailable_for_defense': {
+                'description': '导师未设置为可参加该答辩类型',
+                'suggestion': '在教师数据中补充可参加答辩类型',
+                'has_students': True,
+            },
+            'secretary_not_found': {
+                'description': '秘书姓名在教师表中不存在',
+                'suggestion': '核对秘书姓名是否与教师表完全一致',
+                'has_students': True,
+            },
+            'secretary_unavailable_for_defense': {
+                'description': '秘书未设置为可参加该答辩类型',
+                'suggestion': '在教师数据中补充可参加答辩类型',
+                'has_students': True,
+            },
+            'student_defense_type_missing': {
+                'description': '学生未设置参加答辩类型',
+                'suggestion': '在学生数据中设置参加答辩类型',
+                'has_students': True,
+            },
+            'invalid_time_format': {
+                'description': '时间格式无法识别',
+                'suggestion': '检查教师或教室的时间格式是否正确',
+                'has_students': False,
+            },
+        }
+
+        def _build_item(notice_type, agg, level):
+            info = TYPE_INFO.get(notice_type, {
+                'description': notice_type,
+                'suggestion': '请检查相关数据',
+                'has_students': True,
+            })
+            display_names = []
+            if info['has_students']:
+                # 收集学生姓名，去重并保持顺序，最多显示5个
+                names = [student_names_by_id.get(sid, f'ID:{sid}') for sid in agg['student_ids']]
+                seen = set()
+                unique_names = []
+                for n in names:
+                    if n not in seen:
+                        seen.add(n)
+                        unique_names.append(n)
+                display_names = unique_names[:5]
+            count = agg['count']
+            return {
+                'type': notice_type,
+                'level': level,
+                'description': info['description'],
+                'studentNames': display_names,
+                'teacherNames': agg['teacher_names'],
+                'count': count,
+                'suggestion': info['suggestion'],
+            }
+
+        errors = []
+        warnings = []
+
+        for notice_type, agg in aggregated.items():
+            level = 'error' if notice_type in ERROR_TYPES else 'warning'
+            item = _build_item(notice_type, agg, level)
+            if level == 'error':
+                errors.append(item)
+            else:
+                warnings.append(item)
+
+        # 没有学生参加本次答辩
+        if not payload['students']:
+            errors.append({
+                'type': 'no_students',
+                'level': 'error',
+                'description': f'没有学生参加【{defense_label}】',
+                'studentNames': [],
+                'count': 0,
+                'suggestion': '请检查学生数据中的"参加答辩类型"设置',
+            })
+
+        # 没有可参加的教师
+        if not payload['teachers']:
+            errors.append({
+                'type': 'no_teachers',
+                'level': 'error',
+                'description': f'没有可参加【{defense_label}】的教师',
+                'studentNames': [],
+                'count': 0,
+                'suggestion': '请检查教师数据中的"可参加答辩类型"设置',
+            })
+
+        can_generate = len(errors) == 0
+
+        return {
+            'canGenerate': can_generate,
+            'errors': errors,
+            'warnings': warnings,
+            'stats': {
+                'studentCount': len(payload['students']),
+                'teacherCount': len(payload['teachers']),
+                'roomCount': len(payload['rooms']),
+            },
+        }
+
     def generate_version(self, rules, request_key=None):
         """Compute and persist a draft. Caller holds the schedule write transaction."""
+        rules = dict(rules)  # 防御性拷贝，避免修改调用者传入的字典
         from algorithm import SchedulingError, generate_schedule
+        preflight = self.preflight_check(rules)
+        if not preflight['canGenerate']:
+            messages = [item['description'] for item in preflight['errors']]
+            raise ValueError('生成前资料预检未通过：' + '；'.join(messages))
         source_pre = None
         if rules['defense_type'] == 'formal' and rules.get('preserve_pre_defense_groups', True):
             source_pre = ScheduleVersion.objects.filter(defense_type='pre', is_current=True).first()
@@ -37,6 +201,9 @@ class ScheduleApplication:
             result = generate_schedule(**payload, rules=rules)
         except (SchedulingError, ValueError, TypeError) as exc:
             raise ValueError(f'排期参数错误: {exc}')
+        # 将使用的随机种子持久化到规则快照，便于复现
+        if result.get('random_seed') is not None:
+            rules['random_seed'] = result['random_seed']
         for old in ScheduleVersion.objects.filter(defense_type=rules['defense_type'], is_current=True):
             self._freeze_version(old)
         ScheduleVersion.objects.filter(defense_type=rules['defense_type']).update(is_current=False)

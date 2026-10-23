@@ -27,7 +27,7 @@ WEEKDAY_INDEX = {'一': 0, '二': 1, '三': 2, '四': 3, '五': 4, '六': 5, '�
 MAX_EXPAND_DAYS = 366
 
 # "9:00-12:00" 之类的具体时刻区间（小时允许不补零）
-_CLOCK_RANGE_RE = re.compile(r'([01]?\d|2[0-3]):([0-5]\d)-([01]?\d|2[0-3]):([0-5]\d)')
+_CLOCK_RANGE_RE = re.compile(r'(?<![\d:])([01]?\d|2[0-3]):([0-5]\d)-([01]?\d|2[0-3]):([0-5]\d)(?![\d:])')
 # "周一至周五" / "周一到周五" / "周一-周五"（"周"在"至/到/-"后可省略）
 _WEEK_SPAN_RE = re.compile(r'周([一二三四五六日天])[至到\-]周?([一二三四五六日天])')
 _WEEK_SINGLE_RE = re.compile(r'周([一二三四五六日天])')
@@ -76,6 +76,15 @@ def _extract_clock_ranges(text):
     ranges = []
     for h1, m1, h2, m2 in _CLOCK_RANGE_RE.findall(text):
         ranges.append((f'{int(h1):02d}:{m1}', f'{int(h2):02d}:{m2}'))
+    if ':' in text:
+        # An explicit clock must be honored or rejected, never replaced by a
+        # broader period/default when malformed or only partially recognized.
+        clocks = re.findall(r'\d+:\d+(?::\d+)?', text)
+        if len(clocks) != 2 * len(ranges) or not ranges:
+            return []
+        return [item for item in ranges if item[0] < item[1]]
+    if re.search(r'\d', text):
+        return []
     for word, clock_range in PERIOD_CLOCK_RANGES.items():
         if word in text and clock_range not in ranges:
             ranges.append(clock_range)

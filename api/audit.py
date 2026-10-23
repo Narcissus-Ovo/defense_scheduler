@@ -19,6 +19,10 @@ class AuditedDataMixin:
         with transaction.atomic():
             ScheduleWriteLock.objects.filter(pk=1).update(revision=F('revision') + 1)
             response = super().dispatch(request, *args, **kwargs)
+            if self.action == 'import_data' and getattr(response, 'data', {}).get('preview') is True:
+                # Preview must not change logs, draft revisions, or the write lock.
+                transaction.set_rollback(True)
+                return response
             if response.status_code < 400:
                 # Resource edits invalidate an administrator's open draft form.
                 ScheduleVersion.objects.filter(is_current=True, status='draft').update(revision=F('revision') + 1)

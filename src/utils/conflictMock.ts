@@ -189,5 +189,19 @@ export const getLevelLabel = (level: ConflictLevel) => {
   return '提示'
 }
 
-export const getTypeLabel = (type: ConflictType) => type
+/**
+ * 冲突类型显示名称映射。
+ * 后端通常返回中文类型名；若返回英文原始 key（如新类型暂未映射），在此处补充前端兼容映射。
+ */
+const CONFLICT_TYPE_LABELS: Record<string, string> = {
+  'external_chair_warning': '主席为外院专家提示',
+  'software_participation_imbalance': '软件学院评审次数均衡提示',
+  'external_mentor_concentration': '外院教师集中安排提示',
+  'external_half_day_visit': '外院教师半天到访提示',
+  'cross_campus_same_day': '教师同日跨校区提示',
+}
+
+export const getTypeLabel = (type: ConflictType | string) => {
+  return CONFLICT_TYPE_LABELS[type] || type
+}
 

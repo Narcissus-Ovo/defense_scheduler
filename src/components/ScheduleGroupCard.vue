@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="hover" class="h-full" :class="borderClass">
+  <el-card shadow="hover" class="h-full" :class="cardClass">
     <template #header>
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2">
@@ -71,16 +71,19 @@ const props = defineProps<{
   status: 'normal' | 'warning' | 'error'
   conflictCount: number
   canManage?: boolean
+  highlighted?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'adjust', group: ScheduleGroup): void
 }>()
 
-const borderClass = computed(() => {
-  if (props.status === 'error') return 'border border-red-300'
-  if (props.status === 'warning') return 'border border-yellow-300'
-  return ''
+const cardClass = computed(() => {
+  const classes: string[] = []
+  if (props.status === 'error') classes.push('border border-red-300')
+  else if (props.status === 'warning') classes.push('border border-yellow-300')
+  if (props.highlighted) classes.push('group-highlighted')
+  return classes
 })
 
 const getStudentTagStyle = (mentorName: string) => {
@@ -92,3 +95,25 @@ const getStudentTagStyle = (mentorName: string) => {
   }
 }
 </script>
+
+<style scoped>
+.group-highlighted {
+  animation: highlightPulse 2s ease-out;
+  border: 2px solid #00467f !important;
+  box-shadow: 0 0 0 3px rgba(0, 70, 127, 0.15);
+}
+
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(0, 70, 127, 0.3);
+    background-color: #edf3f9;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(0, 70, 127, 0.15);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(0, 70, 127, 0.15);
+    background-color: transparent;
+  }
+}
+</style>

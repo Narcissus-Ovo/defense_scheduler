@@ -19,7 +19,10 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
 
     serializer_class = ScheduleVersionSerializer
 
-    read_actions = {'current', 'export', 'export_excel', 'export_word', 'check_conflicts', 'versions'}
+    read_actions = {
+        'current', 'export', 'export_excel', 'export_word', 'check_conflicts',
+        'versions', 'record_pdf_export',
+    }
 
     def get_permissions(self):
         if self.action in self.read_actions:
@@ -59,13 +62,39 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         'teacher_inactive': ('人员已停用', 'error'),
         'formal_mentor_session_missing': ('导师与学生场次不一致', 'error'),
         'mentor_missing': ('学生缺少导师', 'error'),
+        # [TASK-P05 新增] 外院导师组数不符作为错误，阻止发布。
+        'external_mentor_group_count': ('外院导师分组冲突', 'error'),
         'external_mentor_concentration': ('外院教师集中安排提示', 'warning'),
         'software_participation_imbalance': ('软件学院评审次数均衡提示', 'warning'),
+        'external_half_day_visit': ('外院教师半天到访提示', 'warning'),
+        'cross_campus_same_day': ('教师同日跨校区提示', 'warning'),
     }
 
     RULE_KEY_ALIASES = {
         'mentor_avoidance': 'avoid_supervisor',
     }
+
+    # 比较规则快照时忽略的内部字段（运行时生成，不影响业务规则一致性）
+    _RULES_COMPARE_IGNORE = {'random_seed', '_source_pre_version_id',
+                             'reserve_formal_resources', 'refresh_secretary_bindings'}
+
+    @classmethod
+    def _rules_equivalent(cls, a, b):
+        """比较两份规则是否业务等价，忽略运行时生成的内部字段。"""
+        if not isinstance(a, dict) or not isinstance(b, dict):
+            return a == b
+        # A server-generated seed must not break retries that omitted it. An
+        # explicit seed in the new request is a business input and must match.
+        if 'random_seed' in b and a.get('random_seed') != b['random_seed']:
+            return False
+        keys_a = set(a.keys()) - cls._RULES_COMPARE_IGNORE
+        keys_b = set(b.keys()) - cls._RULES_COMPARE_IGNORE
+        if keys_a != keys_b:
+            return False
+        for k in keys_a:
+            if a[k] != b[k]:
+                return False
+        return True
 
     def _format_conflicts(self, schedule_version, raw_conflicts):
         """把英文冲突结构转换为前端 ScheduleConflict 形状（中文类型 + level/target/reason）"""
@@ -98,7 +127,7 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
             if not target and group_ids:
                 target = group_name_map.get(group_ids[0], '')
 
-            formatted.append({
+            conflict = {
                 'id': index,
                 'defenseType': defense_label,
                 'groupId': group_ids[0] if group_ids else None,
@@ -109,8 +138,36 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                 'reason': item.get('description', ''),
                 'relatedGroupIds': group_ids,
                 'createdAt': created_at,
-            })
+            }
+            if raw_type == 'software_participation_imbalance' and all(
+                    item.get(key) is not None for key in (
+                        'difference', 'max_count', 'max_teacher_names', 'min_count', 'min_teacher_names')):
+                conflict['details'] = {
+                    'softwareParticipationImbalance': {
+                        'difference': item.get('difference'),
+                        'maxCount': item.get('max_count'),
+                        'maxTeachers': item.get('max_teacher_names', []),
+                        'minCount': item.get('min_count'),
+                        'minTeachers': item.get('min_teacher_names', []),
+                    },
+                }
+            formatted.append(conflict)
         return formatted
+
+    @action(detail=False, methods=['post'])
+    def preflight(self, request):
+        """生成排期前的资料预检，检查导师资料等是否齐全。"""
+        from rest_framework.exceptions import ValidationError
+        rules_raw = request.data.get('rules', {})
+        if not isinstance(rules_raw, dict):
+            return Response({'error': '规则必须是对象'}, status=400)
+        try:
+            result = self.preflight_check(rules_raw)
+        except ValidationError as exc:
+            return Response({'error': str(exc.detail if hasattr(exc, 'detail') else exc)}, status=400)
+        except ValueError as exc:
+            return Response({'error': str(exc)}, status=400)
+        return Response(result)
 
     @action(detail=False, methods=['post'])
     @schedule_write
@@ -122,7 +179,7 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         if request_key:
             previous = ScheduleVersion.objects.filter(request_key=request_key).first()
             if previous:
-                if previous.rules_snapshot != rules:
+                if not self._rules_equivalent(previous.rules_snapshot, rules):
                     return Response({'error': '该请求标识已用于其他规则，请重新生成'}, status=409)
                 return Response(self._version_result(previous))
         try:
@@ -152,7 +209,10 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         if key:
             previous = [ScheduleVersion.objects.filter(request_key=k).first() for k in keys]
             if any(previous):
-                if not all(previous) or any(v.rules_snapshot != r for v, r in zip(previous, (pre_rules, formal_rules))):
+                if not all(previous) or any(
+                    not self._rules_equivalent(v.rules_snapshot, r)
+                    for v, r in zip(previous, (pre_rules, formal_rules))
+                ):
                     return Response({'error': '该请求标识已用于其他联合规则'}, status=409)
                 return Response({'pre': self._version_result(previous[0]), 'formal': self._version_result(previous[1])})
         try:
@@ -192,11 +252,23 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                 raise ValidationError('版本 ID 格式不正确')
         return queryset.filter(is_current=True).first() if is_admin_user(request.user) else queryset.first()
 
+    # [TASK-P09/P12 修改] 实时及冻结版本响应补足评分和版本化导出所需字段。
     def _version_result(self, schedule_version):
         if schedule_version.result_snapshot:
-            return {**schedule_version.result_snapshot, 'status': schedule_version.status, 'revision': schedule_version.revision, 'isCurrent': schedule_version.is_current}
+            result = {**schedule_version.result_snapshot}
+            teacher_snapshot = {str(teacher.get('id')): teacher
+                               for teacher in schedule_version.input_snapshot.get('teachers', [])}
+            result['groups'] = [{**group, 'students': [
+                {**student, 'mentorIsExternal': student.get('mentorIsExternal',
+                    teacher_snapshot.get(str(student.get('mentorId')), {}).get('is_external'))}
+                for student in group.get('students', [])
+            ]} for group in result.get('groups', [])]
+            result.setdefault('rules', schedule_version.rules_snapshot)
+            return {**result, 'status': schedule_version.status, 'revision': schedule_version.revision, 'isCurrent': schedule_version.is_current}
         groups = export_groups(schedule_version)
         formatted_groups = []
+        teacher_external_by_id = dict(Teacher.objects.values_list('id', 'is_external'))
+        teacher_external_by_name = dict(Teacher.objects.values_list('name', 'is_external'))
         for group in groups:
             time_parts = group.time.split(' ')
             date = time_parts[0] if len(time_parts) > 0 else ''
@@ -219,20 +291,8 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                     {'id': t.id, 'name': t.name, 'title': t.title, 'roles': getattr(t, 'roles', []), 'isExternal': t.is_external}
                     for t in group.experts.all()
                 ],
-                'students': [
-                    {
-                        'id': s.id,
-                        'name': s.name,
-                        'studentType': s.student_type,
-                        'mentorName': s.mentor.name if getattr(s, 'mentor_id', None) and hasattr(s, 'mentor') else s.mentor_name,
-                        'mentorId': getattr(s, 'mentor_id', None),
-                        'secretaryId': getattr(s, 'bound_secretary_id', None),
-                        'secretaryName': s.bound_secretary.name if getattr(s, 'bound_secretary_id', None) and hasattr(s, 'bound_secretary') else s.secretary_name,
-                        'studentNo': s.student_no,
-                        'remark': s.remark,
-                    }
-                    for s in group.students.all()
-                ]
+                'students': [self._student_schedule_payload(s, teacher_external_by_id, teacher_external_by_name)
+                             for s in group.students.all()]
             })
 
         return {
@@ -247,6 +307,27 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
             'generatedAt': timezone.localtime(schedule_version.created_at).strftime('%Y-%m-%d %H:%M'),
             'groups': formatted_groups,
             'conflicts': self._format_conflicts(schedule_version, self._check_conflicts(schedule_version))
+        }
+
+    @staticmethod
+    def _student_schedule_payload(student, teacher_external_by_id, teacher_external_by_name):
+        mentor_id = getattr(student, 'mentor_id', None)
+        mentor_name = student.mentor.name if mentor_id and hasattr(student, 'mentor') else student.mentor_name
+        if mentor_id in teacher_external_by_id:
+            mentor_is_external = teacher_external_by_id[mentor_id]
+        else:
+            mentor_is_external = teacher_external_by_name.get(mentor_name) if mentor_name else None
+        return {
+            'id': student.id,
+            'name': student.name,
+            'studentType': student.student_type,
+            'mentorName': mentor_name,
+            'mentorId': mentor_id,
+            'mentorIsExternal': mentor_is_external,
+            'secretaryId': getattr(student, 'bound_secretary_id', None),
+            'secretaryName': student.bound_secretary.name if getattr(student, 'bound_secretary_id', None) and hasattr(student, 'bound_secretary') else student.secretary_name,
+            'studentNo': student.student_no,
+            'remark': student.remark,
         }
 
     @action(detail=False, methods=['post'], url_path='adjust-group')
@@ -388,6 +469,7 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+    # [TASK-P12 修改] Word 导出按所选版本传递备注配置和冲突信息。
     @action(detail=False, methods=['get'], url_path='export_word')
     def export_word(self, request):
         """导出当前排期为 Word 时间安排表（版式对齐学院归档样例，导师与学生同色）"""
@@ -396,13 +478,22 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
 
         if not schedule_version:
             return Response({'error': '暂无排期结果可导出'}, status=404)
+        blocking_conflicts = self._blocking_export_conflicts(schedule_version)
+        if blocking_conflicts:
+            return Response({
+                'error': '当前排期存在硬冲突，处理冲突后才能导出',
+                'conflicts': blocking_conflicts,
+            }, status=400)
 
         from urllib.parse import quote
 
         from .export_word import export_schedule_word
 
         defense_label = DEFENSE_TYPE_LABELS.get(defense_type, defense_type)
-        doc = export_schedule_word(schedule_version, defense_label)
+        conflicts = self._format_conflicts(schedule_version, self._check_conflicts(schedule_version))
+        rules = schedule_version.rules_snapshot or {}
+        include_remarks = rules.get('include_remarks', rules.get('includeRemarks', True))
+        doc = export_schedule_word(schedule_version, defense_label, include_remarks, conflicts)
 
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -413,6 +504,9 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
             f"attachment; filename={ascii_name}; filename*=UTF-8''{utf8_name}"
         )
         doc.save(response)
+        audit(request, '导出', f'导出{defense_label}排期（Word）',
+              format='Word', defense_type=defense_type,
+              version_id=schedule_version.id, version=schedule_version.version)
         return response
 
     @action(detail=False, methods=['get'])
@@ -422,12 +516,43 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         version = self._selected_version(request, defense_type)
         if not version:
             return Response({'error': '暂无排期结果可导出'}, status=404)
+        blocking_conflicts = self._blocking_export_conflicts(version)
+        if blocking_conflicts:
+            return Response({
+                'error': '当前排期存在硬冲突，处理冲突后才能导出',
+                'conflicts': blocking_conflicts,
+            }, status=400)
         conflicts = self._format_conflicts(version, self._check_conflicts(version))
         workbook = build_schedule_workbook(version, defense_type, conflicts)
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response['Content-Disposition'] = f'attachment; filename=defense_schedule_{defense_type}.xlsx'
         workbook.save(response)
+        audit(request, '导出', f'导出{version.get_defense_type_display()}排期（Excel）',
+              format='Excel', defense_type=defense_type,
+              version_id=version.id, version=version.version)
         return response
+
+    @action(detail=False, methods=['post'], url_path='record-pdf-export')
+    def record_pdf_export(self, request):
+        """Record that the browser successfully prepared the selected schedule for printing."""
+        defense_type = request.data.get('defense_type', 'pre')
+        version = self._selected_version(request, defense_type)
+        if not version:
+            return Response({'error': '暂无排期结果可记录'}, status=404)
+        blocking_conflicts = self._blocking_export_conflicts(version)
+        if blocking_conflicts:
+            return Response({
+                'error': '当前排期存在硬冲突，处理冲突后才能导出',
+                'conflicts': blocking_conflicts,
+            }, status=400)
+        audit(request, '导出', f'准备打印{version.get_defense_type_display()}排期（PDF）',
+              format='PDF', defense_type=defense_type,
+              version_id=version.id, version=version.version)
+        return Response({'message': 'PDF 打印操作已记录'})
+
+    def _blocking_export_conflicts(self, version):
+        conflicts = self._format_conflicts(version, self._check_conflicts(version))
+        return [conflict for conflict in conflicts if conflict['level'] == 'error']
 
     @action(detail=False, methods=['get'], url_path='export-excel')
     def export_excel(self, request):

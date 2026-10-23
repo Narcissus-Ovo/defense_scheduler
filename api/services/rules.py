@@ -33,6 +33,7 @@ def normalize_schedule_rules(raw):
         'formal_mentor_same_session': defense_type == 'formal',
         'chair_title': '教授' if defense_type == 'formal' else '副教授',
         'secretary_title': '讲师', 'prefer_senior': True,
+        'prefer_full_day_external': True,
         'grouping': 'secretary' if defense_type == 'formal' else 'supervisor',
         'campus_start_dates': {},
         'soft_weights': {
@@ -41,10 +42,14 @@ def normalize_schedule_rules(raw):
             'avoid_cross_campus': config['softWeights']['avoidCrossCampus'],
             'external_mentor_concentration': config['softWeights']['externalMentorConcentration'],
             'prefer_academic_master_first': config['softWeights']['preferAcademicMasterFirst'],
+            'balance_software_participation': 100 if defense_type == 'formal' else 0,
         },
     }
     for key, value in defaults.items():
         rules.setdefault(key, value)
+    if not isinstance(rules['soft_weights'], dict):
+        raise ValidationError('soft_weights 必须是对象')
+    rules['soft_weights'] = {**defaults['soft_weights'], **rules['soft_weights']}
     from datetime import datetime
     starts = rules['campus_start_dates']
     if not isinstance(starts, dict) or any(key not in ('创新港', '兴庆') for key in starts):
@@ -61,7 +66,7 @@ def normalize_schedule_rules(raw):
     except (ValueError, TypeError):
         raise ValidationError('开始、结束及分校区日期必须有效，且校区日期需在本次排期范围内')
     for key in ('avoid_weekend', 'avoid_holiday', 'course_half_day_blocking', 'include_remarks',
-                'preserve_pre_defense_groups', 'formal_mentor_same_session'):
+                'preserve_pre_defense_groups', 'formal_mentor_same_session', 'prefer_full_day_external'):
         if not isinstance(rules[key], bool):
             raise ValidationError(f'{key} 必须为布尔值')
     if 'avoid_supervisor' in rules and not isinstance(rules['avoid_supervisor'], bool):
@@ -84,12 +89,15 @@ def normalize_schedule_rules(raw):
     rules['supervisor_policy'] = ('avoid' if avoidance else 'none') if defense_type == 'formal' else 'same_group'
     if defense_type == 'formal' and (rules['expert_count'] != 5 or rules['expert_min'] != 5):
         raise ValidationError('正式答辩必须配置 5 位专家（含主席）')
-    floor = 4 if defense_type == 'pre' else 5
+    # [TASK-P04 修改] 后端规则归一化与界面人数口径保持一致。
+    floor = 5
     try:
         if any(isinstance(rules[k], bool) or not isinstance(rules[k], int) for k in (
             'expert_count', 'expert_min', 'group_min', 'group_size', 'group_max', 'formal_software_min')):
             raise ValueError
         if not floor <= rules['expert_min'] <= rules['expert_count']:
+            raise ValueError
+        if defense_type == 'pre' and (rules['expert_min'] != 5 or rules['expert_count'] != 5):
             raise ValueError
         if not 1 <= rules['group_min'] <= rules['group_size'] <= rules['group_max']:
             raise ValueError

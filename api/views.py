@@ -14,16 +14,17 @@ from .authentication import login_attempt_key, check_login_attempts, record_logi
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Count, Max, Q
 from .schedule_integrity import schedule_write, audit, capture_export_groups, export_groups
 from django.http import HttpResponse
 from django.utils import timezone, translation
 import json
-from datetime import datetime
+from datetime import datetime, time
 from .models import Group, OperationLog, Room, RuleConfig, ScheduleVersion, Student, Teacher
 from .audit import AuditedDataMixin
 from .permissions import IsAdminOrReadOnly, IsAdminUser, is_admin_user
 from .timetable import CLASS_PERIOD_TIME_RANGES, TimetableParseError, extract_timetable_unavailable_times
+from .services.import_time import DATE, combine_date_and_periods, normalize_text, supply_explicit_year
 from .serializers import (
     DEFENSE_TYPE_LABELS,
     OperationLogSerializer,
@@ -121,6 +122,10 @@ def normalize_import_cell(value):
     if isinstance(value, str):
         value = value.replace('\xa0', ' ').strip()
         return value if value else None
+    if isinstance(value, time):
+        return value.strftime('%H:%M:%S' if value.second else '%H:%M')
+    if isinstance(value, datetime) and value.time() != time():
+        return value.strftime('%Y-%m-%d %H:%M:%S' if value.second else '%Y-%m-%d %H:%M')
     if hasattr(value, 'strftime'):
         return value.strftime('%Y-%m-%d')
     return value
@@ -133,7 +138,12 @@ def normalize_import_header(value, header_aliases, index):
     text = str(text).strip()
     if text.startswith('Unnamed:'):
         return f'__column_{index}'
-    return header_aliases.get(text, text)
+    normalized = header_aliases.get(text, text)
+    for field in IMPORT_KNOWN_FIELDS:
+        snake = ''.join('_' + char.lower() if char.isupper() else char for char in field).lstrip('_')
+        if snake == normalized and any(char.isupper() for char in field):
+            return field
+    return normalized
 
 
 def import_header_score(row, header_aliases):
@@ -145,31 +155,61 @@ def import_header_score(row, header_aliases):
     return score
 
 
-def read_import_dataframe(file, filename, header_aliases):
+def read_import_dataframe(file, filename, header_aliases, sheet_name=None):
     import pandas as pd
 
     if filename.endswith('.csv'):
         raw = pd.read_csv(file, header=None)
+        sheets = []
     elif filename.endswith(('.xls', '.xlsx')):
-        raw = pd.read_excel(file, header=None)
+        book = pd.ExcelFile(file, engine_kwargs={'formatting_info': True} if filename.endswith('.xls') else {})
+        sheets = book.sheet_names
+        sheet_name = sheet_name or sheets[0]
+        if sheet_name not in sheets:
+            raise ValueError('所选工作表不存在，请重新选择')
+        raw = pd.read_excel(book, sheet_name=sheet_name, header=None)
     else:
         raise ValueError('不支持的文件格式')
 
     if raw.empty:
+        raw.attrs.update(sheets=sheets, sheet=sheet_name or '')
         return raw
 
     scores = [import_header_score(row, header_aliases) for row in raw.values[:10]]
     header_index = max(range(len(scores)), key=lambda index: scores[index])
-    if scores[header_index] == 0:
-        header_index = 0
-
-    columns = [
-        normalize_import_header(value, header_aliases, index)
-        for index, value in enumerate(raw.iloc[header_index].tolist())
-    ]
-    df = raw.iloc[header_index + 1:].copy()
+    best_headers = [normalize_import_header(value, header_aliases, index)
+                    for index, value in enumerate(raw.iloc[header_index].tolist())]
+    has_header = scores[header_index] >= 2 or (
+        scores[header_index] == 1 and any(key in best_headers for key in ('name', 'studentNo')))
+    columns = [normalize_import_header(value, header_aliases, index)
+               for index, value in enumerate(raw.iloc[header_index].tolist())] if has_header else [
+                   f'__column_{index}' for index in range(len(raw.columns))]
+    # Duplicate unknown headings must not discard cells when converting to records.
+    columns = [name if name not in columns[:index] else f'__column_{index}'
+               for index, name in enumerate(columns)]
+    # Fill only actual vertical merges in supported resource fields. Blank cells
+    # outside a merge must remain blank, rather than inherit another room/date.
+    if has_header and filename.endswith(('.xls', '.xlsx')):
+        if filename.endswith('.xlsx'):
+            from openpyxl import load_workbook
+            if hasattr(file, 'seek'):
+                file.seek(0)
+            workbook = load_workbook(file, data_only=True)
+            merges = [(area.min_row - 1, area.max_row, area.min_col - 1, area.max_col)
+                      for area in workbook[sheet_name].merged_cells.ranges]
+            workbook.close()
+        else:
+            merges = book.book.sheet_by_name(sheet_name).merged_cells
+        for first_row, last_row, first_col, last_col in merges:
+            if (last_col - first_col == 1 and last_row - first_row > 1
+                    and first_row > header_index and first_col < len(columns)
+                    and columns[first_col] in ('name', 'campus', 'useDate', 'useTime', 'availableTimes')):
+                raw.iloc[first_row:min(last_row, len(raw)), first_col] = raw.iloc[first_row, first_col]
+    df = raw.iloc[header_index + 1 if has_header else 0:].copy()
     df.columns = columns
-    return df.dropna(how='all')
+    df = df.dropna(how='all')
+    df.attrs.update(sheets=sheets, sheet=sheet_name or '', has_header=has_header)
+    return df
 
 
 def normalize_campus_text(value):
@@ -207,18 +247,21 @@ def normalize_class_period_time(value):
 def parse_card_style_room_text(text, filename):
     import re
 
-    match = re.search(
-        r'(?P<room>\d+-\d+).*?(?P<date>\d{4}-\d{2}-\d{2})\s+'
-        r'(?P<start>\d{1,2}:\d{2})\s*至\s*(?P<end>\d{1,2}:\d{2})',
-        text,
-    )
-    if not match:
+    text = normalize_text(text)
+    room = re.match(r'(?P<room>\d+-\d+)\b', text)
+    dates = re.search(DATE, text)
+    if not room:
         return None
+    if not dates:
+        dates = re.search(r'\d{1,2}(?:月|/|-)\d{1,2}日?', text[room.end():])
+        time_text = text[room.end():][dates.start():] if dates else '缺少借用日期或时间'
+    else:
+        time_text = text[dates.start():]
     campus = '创新港' if '创新港' in filename else '兴庆' if '兴庆' in filename else ''
     return {
         'campus': campus,
-        'name': match.group('room'),
-        'availableTimes': f"{match.group('date')} {match.group('start')}-{match.group('end')}",
+        'name': room.group('room'),
+        'availableTimes': re.split(r'\s+服务[：:]?', time_text)[0].strip(),
     }
 
 
@@ -342,13 +385,26 @@ class ImportMixin:
         
         try:
             filename = file.name.lower()
+            preview = str(request.data.get('preview', '')).lower() == 'true'
+            import_year = request.data.get('importYear')
+            if import_year:
+                supply_explicit_year('1月1日', import_year)
+            import_campus = request.data.get('campus', '')
+            if import_campus and import_campus not in ('创新港', '兴庆'):
+                return Response({'error': '请选择有效的校区'}, status=status.HTTP_400_BAD_REQUEST)
             header_aliases = self._get_import_header_aliases()
             try:
-                df = read_import_dataframe(file, filename, header_aliases)
+                df = read_import_dataframe(file, filename, header_aliases, request.data.get('sheetName'))
             except ValueError as exc:
                 return Response({'error': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
             if df.empty:
+                if preview:
+                    return Response({'preview': True, 'canImport': False, 'rows': [],
+                        'validCount': 0, 'invalidCount': 1, 'errorCount': 1,
+                        'errors': [{'errors': {'non_field_errors': ['当前工作表为空，请选择其他工作表']}}],
+                        'warnings': [], 'sheets': df.attrs.get('sheets', []),
+                        'sheetName': df.attrs.get('sheet', '')})
                 return Response({'error': '文件中没有可导入的数据'}, status=status.HTTP_400_BAD_REQUEST)
             if len(df) > MAX_IMPORT_ROWS:
                 return Response(
@@ -361,11 +417,13 @@ class ImportMixin:
             valid_serializers = []
             errors = []
             warnings = []
+            preview_rows = []
 
             batch_unique_values = {}
             prepared_rows = []
 
             for index, row in enumerate(data_list):
+                row_number = int(df.index[index]) + 1
                 try:
                     processed_row = {}
                     for k, v in row.items():
@@ -380,6 +438,14 @@ class ImportMixin:
                     processed_row = self.prepare_import_row(processed_row, filename)
                     if not processed_row:
                         continue
+
+                    if isinstance(self, RoomViewSet) and not processed_row.get('campus') and import_campus:
+                        processed_row['campus'] = import_campus
+                    time_field = 'availableTimes' if isinstance(self, RoomViewSet) else 'unavailableTimes'
+                    original_time = processed_row.get(time_field, '')
+                    if processed_row.get('useDate'):
+                        original_time = f"{processed_row['useDate']} {processed_row.get('useTime', '')}".strip()
+                    processed_row['_importInputs'] = [{'row': row_number, 'time': str(original_time)}]
 
                     json_fields = ['roles', 'available_types', 'availableTypes', 'defense_types', 'defenseTypes']
                     for field in json_fields:
@@ -401,10 +467,10 @@ class ImportMixin:
                         if field in processed_row and isinstance(processed_row[field], str):
                             processed_row[field] = processed_row[field].lower() in ['true', '1', '是', 'yes']
 
-                    prepared_rows.append((index + 2, processed_row))
+                    prepared_rows.append((row_number, processed_row))
                 except Exception as e:
                     errors.append({
-                        'row': index + 2,
+                        'row': row_number,
                         'errors': {'non_field_errors': [str(e)]},
                     })
 
@@ -413,6 +479,30 @@ class ImportMixin:
             for row_number, processed_row in prepared_rows:
                 try:
                     row_errors = {}
+                    time_field = 'availableTimes' if isinstance(self, RoomViewSet) else 'unavailableTimes'
+                    raw_time = supply_explicit_year(processed_row.get(time_field, ''), import_year)
+                    unrecognized = find_unrecognized_time_entries(raw_time)
+                    if unrecognized:
+                        row_errors[time_field] = [
+                            f'无法识别时间：{entry}。请补齐年份并使用明确的日期和时段；未写入任何数据'
+                            for entry in unrecognized
+                        ]
+                    valid_times, other_times = parse_time_entries(raw_time)
+                    processed_row[time_field] = ','.join([
+                        *valid_times, *(entry for entry in other_times if entry not in unrecognized),
+                    ])
+                    if isinstance(self, RoomViewSet):
+                        for required in ('campus', 'name'):
+                            if not processed_row.get(required):
+                                row_errors[required] = ['请选择导入校区或在文件中补齐校区' if required == 'campus' else '未识别到教室名称，请检查表头或借用单格式']
+                    inputs = processed_row.get('_importInputs', [{'row': row_number, 'time': ''}])
+                    preview_rows.append({
+                        'row': row_number, 'sheet': df.attrs.get('sheet', ''),
+                        'sourceRows': [item['row'] for item in inputs],
+                        'originalTime': '\n'.join(item['time'] for item in inputs),
+                        'normalizedTime': processed_row.get(time_field, ''),
+                        'values': {key: value for key, value in processed_row.items() if key in IMPORT_KNOWN_FIELDS},
+                    })
                     for field, message in self._get_import_unique_fields():
                         fields = field if isinstance(field, (tuple, list)) else (field,)
                         values = tuple(
@@ -439,7 +529,9 @@ class ImportMixin:
                         data=processed_row,
                         partial=bool(instance),
                     )
-                    if serializer.is_valid():
+                    with translation.override('zh-hans'):
+                        valid = serializer.is_valid()
+                    if valid:
                         valid_serializers.append(serializer)
                         warnings.extend(self.collect_import_warnings(processed_row, row_number))
                     else:
@@ -454,11 +546,29 @@ class ImportMixin:
                     })
 
             if errors:
+                if preview:
+                    return Response({
+                        'preview': True, 'canImport': False, 'rows': preview_rows,
+                        'validCount': len(valid_serializers), 'invalidCount': len(errors),
+                        'errors': errors, 'errorCount': len(errors), 'warnings': warnings,
+                        'sheets': df.attrs.get('sheets', []), 'sheetName': df.attrs.get('sheet', ''),
+                    })
                 return Response({
                     'message': '导入失败，请修正错误后重新导入。',
-                    'errors': errors[:5],
+                    'errors': errors,
                     'errorCount': len(errors),
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+            if not valid_serializers:
+                return Response({'error': '未识别到可导入的数据，请检查文件类型、表头和工作表'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if preview:
+                return Response({
+                    'preview': True, 'canImport': True, 'rows': preview_rows,
+                    'validCount': len(valid_serializers), 'invalidCount': 0,
+                    'errors': [], 'errorCount': 0, 'warnings': warnings,
+                    'sheets': df.attrs.get('sheets', []), 'sheetName': df.attrs.get('sheet', ''),
+                })
 
             with transaction.atomic():
                 for serializer in valid_serializers:
@@ -505,7 +615,7 @@ class TeacherViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
         name = processed_row.get('name') or '未知教师'
         return [
             f'第 {row_number} 行 {name}：不可用时间"{"、".join(unrecognized)}"无法识别，'
-            f'排期时将被忽略（{TIME_FORMAT_HINT}）'
+            f'请修正后重新导入（{TIME_FORMAT_HINT}）'
         ]
 
     def prepare_import_row(self, processed_row, filename):
@@ -621,6 +731,51 @@ class StudentViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
         '参加答辩类型': 'defenseTypes',
     }
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        raw_defense_type = self.request.query_params.get('defense_type')
+        if not raw_defense_type:
+            return context
+
+        from rest_framework.exceptions import ValidationError
+
+        labels_to_values = {label: value for value, label in DEFENSE_TYPE_LABELS.items()}
+        defense_type = labels_to_values.get(raw_defense_type, raw_defense_type)
+        if defense_type not in DEFENSE_TYPE_LABELS:
+            raise ValidationError({'defense_type': '答辩类型必须为 pre、formal 或 mid'})
+
+        versions = ScheduleVersion.objects.filter(defense_type=defense_type)
+        if not is_admin_user(self.request.user):
+            versions = versions.filter(status='published')
+        version_id = self.request.query_params.get('version_id')
+        if version_id:
+            try:
+                version_id = int(version_id)
+            except (TypeError, ValueError):
+                raise ValidationError({'version_id': '版本 ID 格式不正确'})
+            version = versions.filter(pk=version_id).first()
+            if version is None:
+                raise ValidationError({'version_id': '所选答辩类型下不存在可查看的该版本'})
+        elif is_admin_user(self.request.user):
+            version = versions.filter(is_current=True).first()
+        else:
+            version = versions.order_by('-created_at').first()
+
+        group_map = {}
+        if version:
+            memberships = {}
+            for student_id, group_name in Group.objects.filter(
+                schedule_version=version,
+            ).values_list('students__id', 'group_id'):
+                if student_id is not None:
+                    memberships.setdefault(student_id, set()).add(group_name)
+            group_map = {
+                student_id: next(iter(group_names)) if len(group_names) == 1 else '多个分组'
+                for student_id, group_names in memberships.items()
+            }
+        context['current_group_map'] = group_map
+        return context
+
     def _normalize_student_no(self, processed_row):
         """学号统一转为字符串：Excel 数值单元格会被读成 int/float，需去掉小数尾巴"""
         raw = processed_row.get('studentNo')
@@ -698,27 +853,26 @@ class RoomViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
         name = processed_row.get('name') or '未知教室'
         return [
             f'第 {row_number} 行 教室 {name}：可用时间"{"、".join(unrecognized)}"无法识别，'
-            f'排期时将按全时段可用处理（{TIME_FORMAT_HINT}）'
+            f'请修正后重新导入（{TIME_FORMAT_HINT}）'
         ]
 
     def prepare_import_row(self, processed_row, filename):
         if not processed_row.get('name'):
-            combined_text = ' '.join(str(value) for value in processed_row.values() if value is not None)
+            combined_text = ' '.join(dict.fromkeys(str(value) for value in processed_row.values() if value is not None))
             card_row = parse_card_style_room_text(combined_text, filename)
             if card_row:
                 processed_row.update(card_row)
-            if not processed_row.get('name') and any(str(key).startswith('__column_') for key in processed_row):
-                return None
-            if not processed_row.get('name') and '教室借用申请' in filename:
+            if (not processed_row.get('name') and any(str(key).startswith('__column_') for key in processed_row)
+                    and not any(key in IMPORT_KNOWN_FIELDS for key in processed_row)):
                 return None
 
         if processed_row.get('campus'):
             processed_row['campus'] = normalize_campus_text(processed_row.get('campus'))
+        elif '创新港' in filename or '兴庆' in filename:
+            processed_row['campus'] = '创新港' if '创新港' in filename else '兴庆'
 
-        if not processed_row.get('availableTimes') and processed_row.get('useDate') and processed_row.get('useTime'):
-            processed_row['availableTimes'] = (
-                f"{processed_row.get('useDate')} {normalize_class_period_time(processed_row.get('useTime'))}"
-            ).strip()
+        if not processed_row.get('availableTimes') and (processed_row.get('useDate') or processed_row.get('useTime')):
+            processed_row['availableTimes'] = combine_date_and_periods(processed_row.get('useDate', ''), processed_row.get('useTime', ''))
 
         return processed_row
 
@@ -749,6 +903,7 @@ class RoomViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
                 if time_text not in current_times:
                     current_times.append(time_text)
             existing_row['availableTimes'] = ','.join(current_times)
+            existing_row.setdefault('_importInputs', []).extend(row.get('_importInputs', []))
 
         return ordered
 
@@ -789,6 +944,94 @@ class OperationLogViewSet(ModelViewSet):
     def clear(self, request):
         OperationLog.objects.filter(authoritative=False).delete()
         return Response({'message': '客户端记录已清空，服务端审计记录已保留'}, status=status.HTTP_200_OK)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # 非管理员只能看到自己的操作，看不到服务端审计日志
+        if not is_admin_user(request.user):
+            queryset = queryset.filter(
+                authoritative=False,
+                operator=request.user.get_username()
+            )
+
+        include_authoritative = request.query_params.get('include_authoritative', 'true').lower()
+        if include_authoritative == 'false':
+            queryset = queryset.filter(authoritative=False)
+
+        # 按模块筛选
+        module = request.query_params.get('module')
+        if module:
+            queryset = queryset.filter(module=module)
+
+        # 按操作类型筛选
+        log_type = request.query_params.get('type')
+        if log_type:
+            queryset = queryset.filter(type=log_type)
+
+        result = request.query_params.get('result')
+        if result:
+            queryset = queryset.filter(result=result)
+
+        # 关键词搜索（描述、操作人）
+        search = request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(description__icontains=search)
+                | Q(operator__icontains=search)
+                | Q(type__icontains=search)
+            )
+
+        # 按日期范围筛选
+        start_date = request.query_params.get('start_date')
+        if start_date:
+            queryset = queryset.filter(created_at__date__gte=start_date)
+        end_date = request.query_params.get('end_date')
+        if end_date:
+            queryset = queryset.filter(created_at__date__lte=end_date)
+
+        # 分页：仅当显式传入 page 参数时才分页，否则返回完整列表（向后兼容）
+        has_pagination = request.query_params.get('page') is not None
+        if not has_pagination:
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        counts = queryset.aggregate(
+            total=Count('id'),
+            success=Count('id', filter=Q(result='成功')),
+            failed=Count('id', filter=Q(result='失败')),
+            audit=Count('id', filter=Q(authoritative=True)),
+        )
+        total = counts['total']
+        try:
+            page = int(request.query_params.get('page', 1))
+            page_size = int(request.query_params.get('page_size', 15))
+        except (ValueError, TypeError):
+            page = 1
+            page_size = 15
+
+        if page < 1:
+            page = 1
+        if page_size < 1 or page_size > 100:
+            page_size = 15
+
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_queryset = queryset[start:end]
+
+        serializer = self.get_serializer(page_queryset, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': total,
+            'page': page,
+            'page_size': page_size,
+            'stats': {
+                'total': total,
+                'success': counts['success'],
+                'failed': counts['failed'],
+                'audit': counts['audit'],
+            },
+        })
 
 
 

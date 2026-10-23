@@ -4,9 +4,12 @@ import { createCsvBlob, downloadBlob } from '../utils/download'
 import type { DefenseType } from '../types/schedule'
 import { getScheduleResults, toBackendDefenseType } from './schedule'
 import { readLocalConflicts } from './conflict'
+import { checkConflictsMock } from '../utils/conflictMock'
 import { exportScheduleToCsv } from '../utils/exportMock'
 import { getRuleConfig } from './ruleConfig'
 import { renderSchedulePrint } from '../domain/printSchedule'
+import { createOperationLog } from './operationLog'
+import type { ScheduleConflict } from '../types/conflict'
 
 const USE_MOCK = runtimeConfig.useMock
 
@@ -22,7 +25,15 @@ export async function exportScheduleExcel(defenseType: DefenseType, versionId?: 
     }
 
     const { conflicts } = readLocalConflicts(defenseType)
-    exportScheduleToCsv(result, conflicts)
+    const freshConflicts = checkConflictsMock(result)
+    assertNoHardConflicts(freshConflicts.length ? freshConflicts : conflicts)
+    exportScheduleToCsv(result, freshConflicts.length ? freshConflicts : conflicts)
+    await createOperationLog({
+      type: '导出结果',
+      module: '排期管理',
+      description: `导出${defenseType}排期（Excel）`,
+      details: { format: 'Excel', defenseType, versionId: result.versionId, versionNumber: result.version }
+    })
 
     return createCsvBlob('')
   }
@@ -58,12 +69,36 @@ export async function exportSchedulePdf(defenseType: DefenseType, versionId?: nu
     const [result, config] = await Promise.all([getScheduleResults(defenseType, versionId), getRuleConfig(defenseType)])
     if (!result?.groups.length) throw new Error('暂无排期数据可打印')
     const local = USE_MOCK ? readLocalConflicts(defenseType).conflicts : []
+    // [TASK-P12 修改] PDF优先采用所选历史版本的备注开关。
+    const includeRemarks = result.rules?.include_remarks ?? result.rules?.includeRemarks ?? config.includeRemarks
+    const currentConflicts = USE_MOCK ? checkConflictsMock(result) : result.conflicts || []
+    assertNoHardConflicts(currentConflicts.length ? currentConflicts : local)
     preview.document.open()
-    preview.document.write(renderSchedulePrint(result, { includeRemarks: config.includeRemarks, conflicts: result.conflicts || local }))
+    preview.document.write(renderSchedulePrint(result, { includeRemarks, conflicts: currentConflicts.length ? currentConflicts : local }))
     preview.document.close()
+    if (USE_MOCK) {
+      await createOperationLog({
+        type: '导出结果',
+        module: '排期管理',
+        description: `导出${defenseType}排期（PDF）`,
+        details: { format: 'PDF', defenseType, versionId: result.versionId, versionNumber: result.version }
+      })
+    } else {
+      await request.post('/schedule/record-pdf-export/', {
+        defense_type: toBackendDefenseType(defenseType),
+        version_id: result.versionId
+      })
+    }
     preview.focus()
   } catch (error) {
     preview.close()
     throw error
+  }
+}
+
+function assertNoHardConflicts(conflicts: ScheduleConflict[]) {
+  const errorCount = conflicts.filter(conflict => conflict.level === 'error').length
+  if (errorCount) {
+    throw new Error(`当前排期有 ${errorCount} 项硬冲突，处理并重新复核后才能导出`)
   }
 }

@@ -107,9 +107,12 @@ def validate_rule_config(config):
     experts = config['expertCount']
     target = parse_non_negative_int(experts['target'], 'expertCount.target')
     minimum = parse_non_negative_int(experts['min'], 'expertCount.min')
-    floor = 4 if defense_type == 'pre' else 5
+    # [TASK-P04 修改] 三类答辩至少5位；预答辩和正式答辩均固定5位。
+    floor = 5
     if minimum < floor:
         raise serializers.ValidationError({'expertCount': [f'专家人数含主席/组长，至少需要 {floor} 人']})
+    if defense_type == 'pre' and (minimum != 5 or target != 5 or experts.get('max') not in (None, 5)):
+        raise serializers.ValidationError({'expertCount': ['预答辩必须固定 5 位专家（4 位普通专家和 1 位组长）']})
     if defense_type == 'formal' and (minimum != 5 or target != 5 or experts.get('max') not in (None, 5)):
         raise serializers.ValidationError({'expertCount': ['正式答辩专家人数必须固定为 5 人（含主席）']})
     if experts.get('max') is not None and target > parse_non_negative_int(experts['max'], 'expertCount.max'):
@@ -194,6 +197,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 class StudentSerializer(serializers.ModelSerializer):
     import_unique_fields = [('studentNo', '学号重复，请检查导入数据')]
 
+    currentGroup = serializers.SerializerMethodField()
     studentNo = serializers.CharField(source='student_no', allow_blank=True, allow_null=True, required=False)
     gender = serializers.CharField(allow_blank=True, required=False)
     studentType = serializers.CharField(source='student_type', required=False)
@@ -208,8 +212,12 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'id', 'name', 'studentNo', 'gender', 'studentType', 'mentorName', 'mentorId',
-            'campus', 'defenseTypes', 'secretaryName', 'secretaryId', 'remark'
+            'campus', 'defenseTypes', 'secretaryName', 'secretaryId', 'currentGroup', 'remark'
         ]
+
+    def get_currentGroup(self, instance):
+        group_map = self.context.get('current_group_map')
+        return group_map.get(instance.pk) if group_map is not None else None
 
     def validate_name(self, value):
         return value.strip()
@@ -357,7 +365,9 @@ class OperationLogSerializer(serializers.ModelSerializer):
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     operator = serializers.CharField(required=False, allow_blank=True, default='系统')
     result = serializers.CharField(required=False, allow_blank=True, default='成功')
+    details = serializers.JSONField(read_only=True)
+    authoritative = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = OperationLog
-        fields = ['id', 'type', 'module', 'description', 'operator', 'result', 'createdAt']
+        fields = ['id', 'type', 'module', 'description', 'operator', 'result', 'createdAt', 'details', 'authoritative']

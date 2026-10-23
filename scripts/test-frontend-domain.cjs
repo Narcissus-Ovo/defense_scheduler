@@ -28,7 +28,7 @@ const { buildScheduleRules, normalizeRuleConfig } = load('src/domain/scheduleRul
 const { createScheduleRequestScope } = load('src/domain/scheduleContext.ts')
 const { getDefaultRuleConfig } = load('src/utils/ruleConfigStorage.ts')
 
-for (const [type, minimum] of [['预答辩', 4], ['正式答辩', 5], ['中期答辩', 5]]) {
+for (const [type, minimum] of [['预答辩', 5], ['正式答辩', 5], ['中期答辩', 5]]) {
   const config = getDefaultRuleConfig(type)
   const rules = buildScheduleRules(type, config)
   assert.equal(rules.policy_version, 2)
@@ -41,11 +41,51 @@ const formal = normalizeRuleConfig({ ...getDefaultRuleConfig('正式答辩'), ex
 assert.equal(formal.expertCount.target, 5)
 assert.equal(formal.expertCount.min, 5)
 const legacyPre = normalizeRuleConfig({ ...getDefaultRuleConfig('预答辩'), policyVersion: undefined, expertCount: { target: 3, min: 3 } })
-assert.equal(legacyPre.expertCount.target, 4)
-assert.equal(legacyPre.expertCount.min, 4)
+assert.equal(legacyPre.expertCount.target, 5)
+assert.equal(legacyPre.expertCount.min, 5)
 assert.equal(buildScheduleRules('正式答辩', formal).formal_software_min, 3)
 const migratedWeights = normalizeRuleConfig({ ...getDefaultRuleConfig('预答辩'), policyVersion: undefined, softWeights: { balanceStudentCount: 5, preferSeniorTeacher: 8, avoidCrossCampus: 3, externalMentorConcentration: 2, preferAcademicMasterFirst: 0 } })
 assert.equal(migratedWeights.softWeights.preferSeniorTeacher, 80)
+// [TASK-P09 新增] 覆盖五项评分、缺失指标和真实/演示口径一致性。
+const { evaluateSoftConstraints } = load('src/utils/optimization.ts')
+const { evaluateSoftConstraints: evaluateMockSoftConstraints } = load('src/utils/optimizationMock.ts')
+const scoringConfig = getDefaultRuleConfig('正式答辩')
+scoringConfig.studentCount.target = 2
+const scoringResult = {
+  defenseType: '正式答辩', generatedAt: '2026-10-12', groups: [
+    { id: 1, date: '2026-10-12', timeRange: '09:00-12:00', campus: '创新港', chairId: 1,
+      chairTitle: '研究员', chairman: '研究员甲', secretaryId: 2, teachers: [], students: [
+        { id: 1, studentType: '学硕', mentorId: 10, mentorName: '外院导师', mentorIsExternal: true },
+        { id: 2, studentType: '学硕', mentorId: 10, mentorName: '外院导师', mentorIsExternal: true }
+      ] },
+    { id: 2, date: '2026-10-12', timeRange: '14:00-17:00', campus: '创新港', chairId: 3,
+      chairTitle: '教授', chairman: '教授乙', secretaryId: 4, teachers: [], students: [
+        { id: 3, studentType: '专硕', mentorId: 11, mentorName: '校内导师', mentorIsExternal: false }
+      ] }
+  ]
+}
+const quality = evaluateSoftConstraints(scoringResult, scoringConfig)
+assert.deepEqual(quality.scores.map(score => score.key), [
+  'balanceStudentCount', 'preferSeniorTeacher', 'avoidCrossCampus',
+  'externalMentorConcentration', 'preferAcademicMasterFirst'
+])
+assert.equal(quality.unassessed.length, 0)
+assert.equal(quality.scores.find(score => score.key === 'preferSeniorTeacher').score,
+  quality.scores.find(score => score.key === 'preferSeniorTeacher').maxScore)
+assert.equal(quality.scores.find(score => score.key === 'externalMentorConcentration').score,
+  quality.scores.find(score => score.key === 'externalMentorConcentration').maxScore)
+assert.equal(quality.scores.find(score => score.key === 'preferAcademicMasterFirst').score,
+  quality.scores.find(score => score.key === 'preferAcademicMasterFirst').maxScore)
+assert.equal(quality.scores.find(score => score.key === 'preferAcademicMasterFirst').weight,
+  scoringConfig.softWeights.preferAcademicMasterFirst)
+assert.equal(quality.scores.some(score => score.key === 'balanceSoftwareParticipation'), false)
+const demoQuality = evaluateMockSoftConstraints(scoringResult, scoringConfig)
+assert.deepEqual(demoQuality.scores, quality.scores, 'demo and real scoring share the same calculations')
+const unavailableQuality = evaluateSoftConstraints({ ...scoringResult, groups: scoringResult.groups.map(group => ({
+  ...group, students: group.students.map(student => ({ ...student, studentType: '计算机科学与技术', mentorIsExternal: null }))
+})) }, scoringConfig)
+assert.ok(unavailableQuality.unassessed.some(item => item.key === 'externalMentorConcentration'))
+assert.ok(unavailableQuality.unassessed.some(item => item.key === 'preferAcademicMasterFirst'))
 const { validateWizardRules } = load('src/utils/wizardValidation.ts')
 const midCampusConfig = { ...getDefaultRuleConfig('中期答辩'), startDate: '2026-10-12', endDate: '2026-10-20', campusStartDates: { '创新港': '2026-10-12', '兴庆': '2026-10-15' } }
 assert.deepEqual(buildScheduleRules('中期答辩', midCampusConfig).campus_start_dates, midCampusConfig.campusStartDates)
@@ -80,6 +120,9 @@ assert.ok(html.includes('STUDENT PRIVATE &lt;备注&gt;'))
 assert.ok(!renderSchedulePrint(printResult, { includeRemarks: false }).includes('STUDENT PRIVATE'))
 const { getMentorColor } = load('src/utils/color.ts')
 assert.ok(html.includes(`background:${getMentorColor('导师甲')}`), 'PDF follows the shared mentor color contract')
+const stressMentors = Array.from({ length: 17 }, (_, index) => `QA导师${String(index + 1).padStart(2, '0')}`)
+assert.equal(new Set(stressMentors.map(getMentorColor)).size, stressMentors.length,
+  'the expanded shared palette distinguishes 17 mentors')
 const { getScheduleExperts } = load('src/domain/scheduleExperts.ts')
 const backendGroup = { ...printResult.groups[0], chairId: 1, teachers: [{ id: 3, name: '组员甲', title: '副教授' }] }
 assert.equal(getScheduleExperts(backendGroup).length, 2, 'API member-only lists also count the chair')

@@ -15,6 +15,18 @@ def audit(request, action, description, **details):
         operator=request.user.get_username(), authoritative=True, details=details)
 
 
+def response_schedule_version_ids(data):
+    if not isinstance(data, dict):
+        return []
+    ids = []
+    if data.get('versionId') is not None:
+        ids.append(int(data['versionId']))
+    for value in data.values():
+        if isinstance(value, dict):
+            ids.extend(response_schedule_version_ids(value))
+    return list(dict.fromkeys(ids))
+
+
 def schedule_write(fn):
     """Serialize writers on SQLite and PostgreSQL, rolling back rejected changes."""
     @wraps(fn)
@@ -44,6 +56,12 @@ def schedule_write(fn):
             if versions and request.data.get('expected_revision') is None:
                 transaction.set_rollback(True)
                 return Response({'error': '缺少编辑版本号，请刷新页面后重新提交'}, status=428)
+            logged_versions = dict(versions)
+            for version_id in response_schedule_version_ids(response.data):
+                if version_id not in logged_versions:
+                    version = ScheduleVersion.objects.filter(pk=version_id).first()
+                    if version:
+                        logged_versions[version_id] = version
             for version in versions.values():
                 # Commands may update their own ORM instance's relation baseline.
                 # Reload it before validating and incrementing this transaction.
@@ -65,9 +83,11 @@ def schedule_write(fn):
                 if isinstance(response.data, dict) and 'conflicts' in response.data:
                     response.data['conflicts'] = version.conflicts_snapshot
                     response.data['revision'] = version.revision
+            for version in logged_versions.values():
+                version.refresh_from_db()
             audit(request, '调整' if group_ids else '生成', f'完成排期操作：{fn.__name__}',
-                  group_ids=group_ids, version_ids=list(versions), changes=request.data,
-                  before=before, after={str(v.id): self._version_result(v) for v in versions.values()})
+                  group_ids=group_ids, version_ids=list(logged_versions), changes=request.data,
+                  before=before, after={str(v.id): self._version_result(v) for v in logged_versions.values()})
             return response
     return wrapped
 

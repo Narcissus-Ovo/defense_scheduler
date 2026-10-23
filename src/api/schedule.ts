@@ -13,12 +13,31 @@ import { toBackendDefenseType } from '../domain/defense'
 
 const USE_MOCK = runtimeConfig.useMock
 
+/**
+ * 规范化排期结果，确保字段命名一致（random_seed -> randomSeed 等）。
+ * 后端可能返回 snake_case 或 camelCase，也可能将种子放在 rules 快照中。
+ */
+function normalizeScheduleResult(result: ScheduleResult & { random_seed?: number | string; rules?: Record<string, unknown> }): ScheduleResult {
+  if (!result || typeof result !== 'object') return result
+  const normalized = { ...result }
+  // 优先使用已有的 camelCase 字段，其次从 snake_case 或 rules 中提取
+  if (normalized.randomSeed === undefined) {
+    if (normalized.random_seed !== undefined) {
+      normalized.randomSeed = normalized.random_seed as number | string
+    } else if (normalized.rules && typeof normalized.rules.random_seed !== 'undefined') {
+      normalized.randomSeed = normalized.rules.random_seed as number | string
+    }
+  }
+  return normalized
+}
+
 export async function getScheduleResults(defenseType: DefenseType, versionId?: number): Promise<ScheduleResult | null> {
   if (USE_MOCK) return getScheduleResult(defenseType)
   try {
-    return await request.get('/schedule/current/', {
+    const result = await request.get('/schedule/current/', {
       params: { defense_type: toBackendDefenseType(defenseType), version_id: versionId }
     }) as ScheduleResult
+    return normalizeScheduleResult(result)
   } catch (error) {
     if (isNotFoundError(error) && versionId === undefined) return null
     throw error
@@ -50,15 +69,87 @@ function mockDraft(defenseType: DefenseType) {
   return result
 }
 
+export interface PreflightIssue {
+  type: string
+  level: 'error' | 'warning'
+  description: string
+  studentNames: string[]
+  teacherNames?: string[]
+  count: number
+  suggestion: string
+}
+
+export interface PreflightResult {
+  canGenerate: boolean
+  errors: PreflightIssue[]
+  warnings: PreflightIssue[]
+  stats: {
+    studentCount: number
+    teacherCount: number
+    roomCount: number
+  }
+}
+
+function mockPreflight(defenseType: DefenseType): PreflightResult {
+  const students = getScheduleResult(defenseType)?.groups.flatMap(g => g.students) || []
+  return {
+    canGenerate: students.length > 0,
+    errors: [],
+    warnings: [],
+    stats: {
+      studentCount: students.length,
+      teacherCount: 0,
+      roomCount: 0
+    }
+  }
+}
+
+export async function preflightSchedule(rules: Record<string, unknown>): Promise<PreflightResult> {
+  if (USE_MOCK) {
+    const defenseType = rules.defense_type === 'formal' ? '正式答辩' : rules.defense_type === 'mid' ? '中期答辩' : '预答辩'
+    return mockPreflight(defenseType as DefenseType)
+  }
+  return request.post('/schedule/preflight/', { rules }) as Promise<PreflightResult>
+}
+
 export async function generateSchedule(defenseType: DefenseType, config = getDefaultRuleConfig(defenseType)) {
+  return generateScheduleWithOptions(defenseType, config)
+}
+
+function createRandomSeed(previousSeed?: number | string) {
+  const values = crypto.getRandomValues(new Uint32Array(2))
+  let seed = values[0] * 0x20_0000 + (values[1] >>> 11)
+  if (String(seed) === String(previousSeed)) seed = (seed + 1) % Number.MAX_SAFE_INTEGER
+  return seed
+}
+
+export async function regenerateScheduleWithNewSeed(
+  defenseType: DefenseType,
+  config: RuleConfig,
+  previousSeed?: number | string
+) {
+  return generateScheduleWithOptions(defenseType, config, {
+    freshSeed: true,
+    previousSeed
+  })
+}
+
+async function generateScheduleWithOptions(
+  defenseType: DefenseType,
+  config: RuleConfig,
+  options?: { freshSeed: true; previousSeed?: number | string }
+) {
   if (USE_MOCK) return mockDraft(defenseType)
-  const rules = buildScheduleRules(defenseType, config)
+  const baseRules = buildScheduleRules(defenseType, config)
+  const rules = options?.freshSeed
+    ? { ...baseRules, random_seed: createRandomSeed(options.previousSeed) }
+    : baseRules
   const storageKey = `pending-generation-${defenseType}`
   const result = await request.post('/schedule/generate/', {
     rules, request_key: generationKey(storageKey, rules)
   }, { timeout: 120000 }) as ScheduleResult
   sessionStorage.removeItem(storageKey)
-  return result
+  return normalizeScheduleResult(result)
 }
 
 export interface LinkedScheduleResult { pre: ScheduleResult; formal: ScheduleResult }
@@ -86,7 +177,10 @@ export async function generateLinkedSchedule(preConfig: RuleConfig, formalConfig
     ...payload, request_key: generationKey(storageKey, payload)
   }, { timeout: 120000 }) as LinkedScheduleResult
   sessionStorage.removeItem(storageKey)
-  return result
+  return {
+    pre: normalizeScheduleResult(result.pre),
+    formal: normalizeScheduleResult(result.formal)
+  }
 }
 
 export interface ScheduleVersionOption {
@@ -123,7 +217,8 @@ export async function publishSchedule(versionId: number, revision: number): Prom
     saveScheduleResult(published)
     return published
   }
-  return request.post('/schedule/publish/', { version_id: versionId, expected_revision: revision }) as Promise<ScheduleResult>
+  const result = await request.post('/schedule/publish/', { version_id: versionId, expected_revision: revision }) as ScheduleResult
+  return normalizeScheduleResult(result)
 }
 
 export interface StudentMoveOptions { preserveSecretary?: boolean; moveMentor?: boolean; secretaryId?: number | null }

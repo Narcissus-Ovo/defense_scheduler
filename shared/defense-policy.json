@@ -11,7 +11,7 @@
       "mentorAvoidance": false,
       "formalMentorSameSession": false,
       "studentCount": { "target": 6, "min": 4, "max": 8 },
-      "expertCount": { "target": 4, "min": 4, "max": null, "includesChair": true },
+      "expertCount": { "target": 5, "min": 5, "max": 5, "includesChair": true },
       "expertCountIncludesChair": true,
       "secretaryCount": 1,
       "roleQualification": {

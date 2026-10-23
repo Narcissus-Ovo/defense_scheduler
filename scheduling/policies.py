@@ -32,9 +32,10 @@ _ROLE_ALIASES = {
     "秘书": "secretary", "secretary": "secretary",
     "导师": "supervisor", "supervisor": "supervisor",
 }
+# [TASK-P04 修改] 共享冲突校验识别研究员职称等级。
 _TITLE_RANKS = {
-    "教授": 3, "正高": 3, "正高级": 3, "professor": 3,
-    "副教授": 2, "副高": 2, "副高级": 2, "associate professor": 2,
+    "教授": 3, "研究员": 3, "正高": 3, "正高级": 3, "professor": 3,
+    "副教授": 2, "副研究员": 2, "副高": 2, "副高级": 2, "associate professor": 2,
     "讲师": 1, "lecturer": 1,
     "助教": 0, "assistant": 0, "teaching assistant": 0,
 }
@@ -115,6 +116,20 @@ def teacher_can_role(raw: Any, role: str) -> bool:
         return False
     roles = _allowed_roles(raw)
     return roles is None or role in roles
+
+
+def secretary_is_qualified(teacher: Any, required_title: str = '') -> bool:
+    """An explicitly designated secretary is qualified regardless of title.
+
+    Legacy records without declared roles still use the configured title floor.
+    Active state, availability, role separation and supervisor rules remain
+    independent constraints.
+    """
+    raw = _teacher_raw(teacher)
+    if not teacher_can_role(raw, 'secretary'):
+        return False
+    roles = _allowed_roles(raw)
+    return bool(roles and 'secretary' in roles) or _meets_title(raw.get('title'), required_title)
 
 
 def is_software_teacher(raw: Any) -> bool:
@@ -220,7 +235,9 @@ def committee_violations(draft: Any, teachers: Any, rules: Mapping[str, Any]) ->
         if role == "expert" and not _member_eligible(raw):
             report("member_ineligible", f"教师 {name} 不适合担任组员，仅可按资格担任主席/组长", [tid])
             continue
-        if not teacher_can_role(raw, role) or not _meets_title(raw.get("title"), required_title):
+        qualified = (secretary_is_qualified(raw, required_title) if role == 'secretary'
+                     else teacher_can_role(raw, role) and _meets_title(raw.get("title"), required_title))
+        if not qualified:
             report("role_qualification", f"教师 {name} 不具备担任{role_labels[role]}的角色或职称资格", [tid], role=role)
 
     # A legacy rule has no new scenario headcount constraint. V2 always enforces
@@ -251,4 +268,14 @@ def committee_violations(draft: Any, teachers: Any, rules: Mapping[str, Any]) ->
         if software_count < minimum:
             report("software_majority", f"正式答辩至少需要 {minimum} 位软件学院导师，实际 {software_count} 人", [],
                    assigned=software_count, min_required=minimum)
+
+    # 正式答辩：主席为外院专家时给出提示（院内主席优先，仅作 warning）
+    if defense == "formal" and chair is not None and chair in teacher_map:
+        chair_raw = teacher_map[chair]
+        if _boolean(_value(chair_raw, "is_external", "isExternal", default=False)):
+            chair_name = chair_raw.get("name") or str(chair)
+            report("external_chair_warning",
+                   f"主席 {chair_name} 为外院专家，建议优先选择校内合格正高担任主席",
+                   [chair], teacher_name=chair_name)
+
     return conflicts

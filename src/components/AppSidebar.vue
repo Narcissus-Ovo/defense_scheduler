@@ -3,6 +3,13 @@
     <div class="h-14 flex items-center justify-center border-b font-bold text-lg text-blue-600 tracking-wide">
       答辩安排助手
     </div>
+    <!-- [TASK-P02 修改] 选择答辩类型，并由路由查询参数保持各模块上下文。 -->
+    <div class="px-4 py-3 border-b">
+      <div class="text-xs text-gray-500 mb-2">当前答辩类型</div>
+      <el-select v-model="defenseType" size="small" class="w-full" aria-label="当前答辩类型">
+        <el-option v-for="type in defenseTypes" :key="type" :label="type" :value="type" />
+      </el-select>
+    </div>
     <el-menu
       :default-active="activeMenu"
       class="border-r-0 flex-1"
@@ -10,22 +17,21 @@
     >
       <el-menu-item index="/dashboard">
         <el-icon><DataBoard /></el-icon>
-        <span>工作台 · 从这里开始</span>
+        <span>工作台</span>
       </el-menu-item>
-      <el-menu-item v-if="canManage" index="/schedule-wizard">
-        <el-icon><Guide /></el-icon>
-        <span>分步安排向导</span>
-      </el-menu-item>
-      <div class="nav-section">完整管理</div>
       <el-menu-item index="/rule-config">
         <el-icon><Setting /></el-icon>
         <span>安排要求</span>
       </el-menu-item>
       <el-menu-item index="/schedule-results">
         <el-icon><Calendar /></el-icon>
-        <span>答辩安排与导出</span>
+        <span>分组与发布</span>
       </el-menu-item>
-      <div class="nav-section">资料管理</div>
+      <el-menu-item v-if="canManage" index="/schedule-wizard">
+        <el-icon><Guide /></el-icon>
+        <span>生成向导</span>
+      </el-menu-item>
+      <div class="nav-section">基础数据</div>
       <el-menu-item index="/teachers">
         <el-icon><Avatar /></el-icon>
         <span>教师/专家管理</span>
@@ -61,10 +67,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { DataBoard, Avatar, User, OfficeBuilding, Calendar, Setting, Document, Guide, CircleCheck } from '@element-plus/icons-vue'
 import { enableDemoTools } from '../config/features'
 
-import { workflowLink } from '../utils/useDefenseType'
+import { defenseTypes, useDefenseType, workflowLink } from '../utils/useDefenseType'
 import { useAdminGuard } from '../utils/adminGuard'
 const { canManage } = useAdminGuard()
 const router = useRouter()
 const route = useRoute()
+const defenseType = useDefenseType()
 const activeMenu = computed(() => route.path)
 </script>
