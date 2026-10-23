@@ -148,5 +148,6 @@ export const batchDeleteTeachers = async (ids: number[]) => {
 
 export const normalizeTeacher = (teacher: Teacher): Teacher => ({
   ...teacher, isActive: teacher.isActive ?? true, memberEligible: teacher.memberEligible ?? true,
+  expertOnly: teacher.expertOnly ?? false,
   isSoftwareTeacher: !!teacher.isSoftwareTeacher || (!teacher.isExternal && teacher.college.includes('软件'))
 })

@@ -1,28 +1,12 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-sm">
+  <div class="data-list-page bg-white rounded-lg shadow-sm">
     <PreparationGuide title="教室与时间" description="确认校区、容量和可用时段。教室可用日期应覆盖本次答辩日期。" />
-    <!-- Search Bar -->
-    <el-form :inline="true" :model="searchForm" class="mb-4">
-      <el-form-item label="校区">
-        <el-select v-model="searchForm.campus" placeholder="选择校区" clearable style="width: 180px">
-          <el-option label="创新港" value="创新港" />
-          <el-option label="兴庆" value="兴庆" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="教室名称">
-        <el-input v-model="searchForm.name" placeholder="请输入教室名称/编号" clearable @keyup.enter="handleSearch" style="width: 180px" />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleSearch">
-          <el-icon class="mr-1"><Search /></el-icon>搜索
-        </el-button>
-        <el-button @click="resetSearch">重置</el-button>
-      </el-form-item>
-    </el-form>
+    <DataListSearch v-model="searchQuery" placeholder="教室名称 / 校区 / 可用时间" :count="filteredData.length" @search="handleSearch">
+    </DataListSearch>
 
     <!-- Toolbar -->
-    <div v-if="canManage" class="mb-4 flex justify-between items-center">
-      <div class="flex flex-wrap gap-2">
+    <div v-if="canManage" class="data-list-toolbar">
+      <div class="data-list-actions">
         <el-button @click="handleAdd">
           <el-icon class="mr-1"><Plus /></el-icon>新增
         </el-button>
@@ -73,7 +57,7 @@
       </el-table-column>
     </el-table>
 
-    <div class="mt-4 flex justify-end">
+    <div class="data-list-pagination">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
@@ -81,6 +65,7 @@
         :total="filteredData.length"
         layout="total, sizes, prev, pager, next, jumper"
         background
+        :pager-count="5"
         @size-change="handlePageSizeChange"
         @current-change="handlePageChange"
       />
@@ -127,10 +112,12 @@
 
 <script setup lang="ts">
 import PreparationGuide from '../../components/PreparationGuide.vue'
+import DataListSearch from '../../components/DataListSearch.vue'
+import { matchesListSearch } from '../../utils/listSearch'
 import { computed, ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Search, Plus, Upload, Delete } from '@element-plus/icons-vue'
+import { Plus, Upload, Delete } from '@element-plus/icons-vue'
 import ImportDialog from '../../components/ImportDialog.vue'
 import { listClassrooms, createClassroom, updateClassroom, deleteClassroom, batchDeleteClassrooms } from '../../api/classroom'
 import type { Classroom } from '../../types/classroom'
@@ -186,10 +173,7 @@ const handleBatchDelete = () => {
   }).catch(() => {})
 }
 
-const searchForm = reactive({
-  campus: '',
-  name: ''
-})
+const searchQuery = ref('')
 
 const defaultForm: Omit<Classroom, 'id'> = {
   campus: '创新港',
@@ -222,11 +206,7 @@ const fetchData = async () => {
 }
 
 const handleSearch = () => {
-  filteredData.value = allData.value.filter(item => {
-    const matchCampus = !searchForm.campus || item.campus === searchForm.campus
-    const matchName = !searchForm.name || item.name.includes(searchForm.name)
-    return matchCampus && matchName
-  })
+  filteredData.value = allData.value.filter(item => matchesListSearch(searchQuery.value, [item.name, item.campus, item.availableTimes, item.remark]))
   currentPage.value = 1
   selectedIds.value = []
 }
@@ -240,11 +220,6 @@ const handlePageSizeChange = () => {
   selectedIds.value = []
 }
 
-const resetSearch = () => {
-  searchForm.campus = ''
-  searchForm.name = ''
-  handleSearch()
-}
 
 const handleAdd = () => {
   if (!requireAdmin()) return

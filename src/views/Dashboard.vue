@@ -16,16 +16,21 @@
     <WorkflowSteps :current="!canManage ? 4 : currentResult?.groups.length ? (currentResult.status === 'published' ? 4 : 3) : materials.every(item => !!item.count) ? 2 : 1" />
     <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon class="mb-4" />
     <section class="next-action" aria-live="polite">
-      <div><h2>{{ nextAction.title }}</h2></div>
+      <div><h2>{{ nextAction.title }}</h2><p>{{ nextAction.description }}</p></div>
       <el-button type="primary" size="large" :disabled="loading || !!error" @click="router.push(workflowLink(nextAction.path))">{{ nextAction.button }} <span class="ml-2" aria-hidden="true">→</span></el-button>
     </section>
+    <div v-if="!loading && !error && participation.total && !participation.current" class="workflow-note participation-note" role="status">
+      <p>{{ participation.hint }}请核对当前选择的环节，无需重复导入学生。</p>
+      <div class="participation-links"><el-button v-for="type in participation.availableTypes" :key="type" link type="primary" @click="defenseType = type">切换到{{ type }}</el-button><RouterLink :to="workflowLink('/students')" class="text-link">核对学生参与环节 →</RouterLink></div>
+    </div>
     <section aria-labelledby="materials-title">
       <div class="section-heading"><h2 id="materials-title">1. 资料准备</h2></div>
       <div class="material-grid">
         <RouterLink v-for="item in materials" :key="item.path" :to="workflowLink(item.path)" class="material-card">
-          <div class="material-top"><span class="material-label">{{ item.title }}</span><span class="material-state" :class="{ missing: item.count === 0 }">{{ item.count === null ? '尚未读取' : item.count ? '已有资料' : '待准备' }}</span></div>
+          <div class="material-top"><span class="material-label">{{ item.title }}</span><span class="material-state" :class="{ missing: item.count === 0 }">{{ item.count === null ? '尚未读取' : item.count ? '已有资料' : item.path === '/students' && participation.total ? '本环节待确认' : '待准备' }}</span></div>
           <div class="material-count">{{ item.count ?? '—' }}<small>{{ item.unit }}</small></div>
-          <span class="material-link">{{ canManage && item.count === 0 ? '去导入资料' : '查看与补充' }} <span aria-hidden="true">→</span></span>
+          <p v-if="item.path === '/students'">{{ participation.hint }}</p>
+          <span class="material-link">{{ item.path === '/students' && participation.total && !item.count ? '核对参与环节' : canManage && item.count === 0 ? '去导入资料' : '查看与补充' }} <span aria-hidden="true">→</span></span>
         </RouterLink>
       </div>
     </section>
@@ -69,6 +74,7 @@ import { enableDemoTools } from '../config/features'
 import { useAdminGuard } from '../utils/adminGuard'
 import { defenseTypes, useDefenseType, workflowLink } from '../utils/useDefenseType'
 import WorkflowSteps from '../components/WorkflowSteps.vue'
+import { summarizeParticipation } from '../utils/studentParticipation'
 const router = useRouter()
 const defenseType = useDefenseType()
 const { canManage, requireAdmin } = useAdminGuard()
@@ -78,6 +84,7 @@ const classrooms = ref<Classroom[] | null>(null)
 const results = ref<Partial<Record<DefenseType, ScheduleResult>>>({})
 const loading = ref(true)
 const error = ref('')
+const participation = computed(() => summarizeParticipation(students.value || [], defenseType.value))
 const currentResult = computed(() => results.value[defenseType.value])
 const errorCount = computed(() => currentResult.value?.conflicts?.filter(c => c.level === 'error').length || 0)
 const scheduledStudents = computed(() => new Set(currentResult.value?.groups.flatMap(g => g.students.map(s => s.id))).size)
@@ -93,6 +100,7 @@ const nextAction = computed(() => {
   if (error.value) return { title: '暂时无法确认进度', description: '请点击上方“刷新进度”重试，避免把读取失败当作没有资料。', button: '等待重新读取', path: '/dashboard' }
   if (!canManage.value) return { title: '查看已发布的答辩安排', description: '您可以查看分组、答辩时间，并下载 Word 或 Excel 文件。', button: '查看安排', path: '/schedule-results' }
   const missing = materials.value.find(item => !item.count)
+  if (missing?.path === '/students' && participation.value.total) return { title: `核对${defenseType.value}的学生参与环节`, description: participation.value.hint + ' 可切换到已有学生的环节，或在学生管理补充参与环节。', button: '核对参与环节', path: '/students' }
   if (missing) return { title: `先准备${missing.title}`, description: missing.hint + ' 已有 Excel 文件可以直接导入。', button: `准备${missing.title}`, path: missing.path }
   if (currentResult.value?.groups.length) return { title: currentResult.value.status === 'published' ? '安排已发布，可以导出了' : errorCount.value ? `草稿已生成，还有 ${errorCount.value} 项问题需要处理` : '草稿已生成，请核对分组', description: '您可以继续查看本次安排。修改已发布内容时，需要生成新的草稿。', button: currentResult.value.status === 'published' ? '查看并导出' : '继续检查安排', path: '/schedule-results' }
   return { title: '资料已有，接下来确认日期和人数', description: '先核对本次要求，再生成分组草稿。高级要求可按需展开。', button: '确认安排要求', path: '/rule-config' }

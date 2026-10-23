@@ -74,10 +74,11 @@ def _teacher_raw(teacher: Any) -> dict[str, Any]:
         "is_active": ("isActive", "active"),
         "is_external": ("isExternal",),
         "member_eligible": ("memberEligible",),
+        "expert_only": ("expertOnly",),
         "is_software_teacher": ("isSoftwareTeacher",),
     }
     for field in ("id", "name", "title", "college", "roles", "is_active",
-                  "is_external", "member_eligible", "is_software_teacher"):
+                   "is_external", "member_eligible", "expert_only", "is_software_teacher"):
         if (field not in raw and not any(alias in raw for alias in aliases.get(field, ()))
                 and hasattr(teacher, field)):
             raw[field] = getattr(teacher, field)
@@ -112,10 +113,30 @@ def teacher_can_role(raw: Any, role: str) -> bool:
     """
     raw = _teacher_raw(raw)
     role = _ROLE_ALIASES.get(str(role).strip().lower(), str(role).strip().lower())
+    if _boolean(_value(raw, 'expert_only', 'expertOnly', default=False)) and role != 'expert':
+        return False
     if not _is_active(raw) or (role == "expert" and not _member_eligible(raw)):
         return False
     roles = _allowed_roles(raw)
-    return roles is None or role in roles
+    return roles is None or role in roles or (role == 'expert' and 'chair' in roles)
+
+
+def effective_teacher_roles(teacher: Any) -> list[str]:
+    """Expose the confirmed chair/member eligibility, preserving exclusions.
+
+    Designation as chair grants ordinary expert eligibility unless the teacher
+    is explicitly unsuitable as a member. This does not grant secretary roles.
+    Empty roles keep their legacy unrestricted semantics.
+    """
+    raw = _teacher_raw(teacher)
+    roles = raw.get('roles') or []
+    result = ([role for role in re.split(r'[,，;；/、\s]+',roles) if role]
+              if isinstance(roles,str) else list(roles))
+    allowed = _allowed_roles(raw)
+    if (allowed and 'chair' in allowed and 'expert' not in allowed and _member_eligible(raw)
+            and not _boolean(_value(raw,'expert_only','expertOnly',default=False))):
+        result.append('普通专家')
+    return result
 
 
 def secretary_is_qualified(teacher: Any, required_title: str = '') -> bool:

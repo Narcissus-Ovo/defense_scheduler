@@ -37,7 +37,7 @@ API 使用服务端 Token 认证，默认有效期为 12 小时（可由配置�
 | 模块 | 路由或动作 |
 | --- | --- |
 | 教师 | `/teachers/`、`import_data/`、`batch_delete/`、`import_timetable/` |
-| 学生 | `/students/`、`import_data/`、`batch_delete/` |
+| 学生 | `/students/`、`import_data/`、`import-cohort/`、`batch-defense-types/`、`batch_delete/` |
 | 教室 | `/rooms/`、`import_data/`、`batch_delete/` |
 | 规则 | `/rule-config/`，按 `defense_type` 读取和保存 |
 | 生成 | `POST /schedule/generate/`、`POST /schedule/generate-linked/` |
@@ -60,12 +60,43 @@ API 使用服务端 Token 认证，默认有效期为 12 小时（可由配置�
 | `campus` | 教室导入可选，仅补充源文件缺失的校区（创新港／兴庆），不覆盖已有值；其他资料须在源文件提供校区 |
 | `importYear` | 可选，1900～2100 四位年份，仅补充缺少年份的日期，不改写完整日期 |
 | `sheetName` | 可选，Excel 工作表名；预览返回工作表列表，不指定时使用默认表 |
+| `defenseTypes` | 学生普通导入可选，JSON 数组（预答辩／正式答辩／中期答辩），仅补充文件及文件名均未注明的参与环节；不替换原表环节，与已有学生环节合并 |
 
 预览成功解析后以 HTTP 200 返回数据对象，外层遵守统一响应壳：`preview=true`、`canImport`、`rows`、`validCount`、`invalidCount`、`errors`、`warnings`、`sheets`、`sheetName`。每条 `rows` 包含 `row`、`sheet`、`sourceRows`、`originalTime`、`normalizedTime`、`values`。`canImport=false` 表示检查未通过，不能仅按 HTTP 200 启用确认；文件本身不可读等请求错误仍返回错误状态。
 
 预览不保存业务对象、不写审计日志。正式确认重新上传文件和参数，后端重新校验；有错误 HTTP 400 整批回滚，错误详情保留来源行。前端在文件、工作表、校区或年份变化后使旧预览失效；预览不是可绕过校验的授权凭据。日期范围按每天相同时段展开，上限 366 天；无效时刻和部分缺失的日期／时间必须修正，不能退化为全天。
 
 类型定义见 `src/types/import.ts`，请求封装见 `src/api/import.ts`。特殊地点表头、混合线上地点、同一教室追加导入的已知限制见[验证记录](../releases/导入修复与流程验证-2026-10-17.md)。
+
+## 学生与导师联合批量导入
+
+学生已录入不等于参加当前环节。工作台和向导同时展示总人数、当前环节人数，区分未导入、未设置环节、仅参加其他环节；切换显示类型不修改学生资料。
+
+学生读取响应增加只读 `participationExcluded`：参与环节为空且备注为明确不参排原因时为 `true`。此类学生计入资料总人数，但不计入当前参排或“未设置环节”人数。允许校区为空，不产生缺参与类型的排期提示；单纯校区空白不能判断不参排。
+
+普通导入和联合导入均优先识别完整备注声明：休学、转博、已转博、已毕业、退学、外院答辩（可带学院说明）、不参加答辩等。识别后保留备注、清空 `defenseTypes`，覆盖之前错误的参与环节；不会用统一校区参数或逐行修正给不参排者补校区。“未转博”“申请休学待审批”等不明确或否定表达不会自动排除。普通导入的文件／文件名／请求参数环节补充及旧值合并仅适用于未识别为不参排的行。
+
+`POST /api/students/batch-defense-types/` 仅管理员，JSON `{"ids":[1,2],"defenseTypes":["正式答辩"]}`。ids 为 1～1000 个正整数，环节为非空合法数组；任一学生不存在或参数无效 HTTP 400，整批回滚。成功返回 `message`、`count`，只追加所选环节，保留原环节、导师及其他字段，并按基础资料修改机制记审计、使草稿 revision 失效。该动作不修改发布快照。
+
+所选学生包含明确不参排备注时，该批次同样 HTTP 400、整批不写入。恢复参加须先核对并更正备注、校区，再设置参与环节。
+
+`POST /api/students/import-cohort/`，仅管理员，`multipart/form-data`：
+
+| 字段 | 含义 |
+| --- | --- |
+| `teacherFile` | 必填，一份软件学院教师名单，含姓名及可选职称、指定角色 |
+| `studentFiles` | 必填，重复字段上传 1～10 份学生名册，须有学号、姓名、导师表头 |
+| `defenseTypes` | 必填，JSON 数组，明确选取预答辩／正式答辩／中期答辩，不从文件名推断 |
+| `preview` | `true` 仅预览；`false` 重新校验并确认 |
+| `campus` | 可选，仅补充空白校区，创新港／兴庆 |
+| `teacherSheet` / `studentSheets` | 可选，教师工作表名／学生文件下标到工作表名的 JSON 对象 |
+| `corrections` | 可选，JSON 对象：预览行 `key` → `{"campus":"兴庆"}`，仅支持校区修正；文件或工作表变化后旧 key 被拒绝 |
+
+支持 XLSX、XLS、CSV；每份 5 MB、本批合计 20 MB，每表 1000 行、学生合计 3000 行。预览返回 `preview`、`canImport`、`stats`、`files`、`teachers`、`students`、`errors`、`warnings`；行包含 `key`、`sources`（文件／工作表／原始行）、`action`（create/update/keep）。预览无业务、审计、草稿 revision 或写锁 revision 变更。解析成功但不合格仍 HTTP 200 且 `canImport=false`；确认有错误 HTTP 400，整批回滚。成功确认返回 `message`、`stats`、`warnings`，记录汇总审计。
+
+预览另返回 `excludedStudents`，结构同学生行并保留原始 `remark`、来源和操作；`students` 只包含参排学生。`stats.totalStudents` 为去重后的总资料人数，`stats.students` 为参排人数，`stats.excludedStudents` 为不参排人数，前者等于后两者之和。不参排者仍写入学生资料，但不要求补齐导师和校区，也不会仅因其导师姓名而新建外院专家。当前真实批次应为316份资料、301位参排、15位不参排，43位软件学院教师加68位参排学生所需外院导师。
+
+教师按姓名关联，学生按学号关联；同学号内容相同合并来源，冲突拒绝。软件学院名单保留明确角色；名单外导师补入为 `isExternal=true`、`isSoftwareTeacher=false`、`expertOnly=true`、`roles=["普通专家"]`，缺失职称为“外院导师（职称待确认）”，已有职称、停用状态、不可用时间保留。教师资源增加 `expertOnly` 布尔字段；为真时 Serializer 拒绝其他角色，算法输入与资格校验也拒绝主席／组长／秘书。旧记录迁移默认 false，旧外院教师不被整体改写。
 
 ## 排期写入保护
 

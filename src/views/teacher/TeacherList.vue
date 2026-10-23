@@ -1,39 +1,19 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-sm">
+  <div class="data-list-page bg-white rounded-lg shadow-sm">
     <PreparationGuide title="教师与专家" description="确认姓名、职称、担任角色及不可用时间；有课表时也可以直接导入。" />
-    <!-- Search Bar -->
-    <el-form :inline="true" :model="searchForm" class="mb-4">
-      <el-form-item label="姓名">
-        <el-input v-model="searchForm.name" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" style="width: 180px" />
-      </el-form-item>
-      <el-form-item label="学院">
-        <el-input v-model="searchForm.college" placeholder="请输入学院" clearable @keyup.enter="handleSearch" style="width: 180px" />
-      </el-form-item>
-      <el-form-item label="职称">
-        <el-select v-model="searchForm.title" placeholder="选择职称" clearable style="width: 180px">
-          <el-option label="教授" value="教授" />
-          <el-option label="副教授" value="副教授" />
-          <el-option label="讲师" value="讲师" />
-          <el-option label="其他" value="其他" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleSearch">
-          <el-icon class="mr-1"><Search /></el-icon>搜索
-        </el-button>
-        <el-button @click="resetSearch">重置</el-button>
-      </el-form-item>
-    </el-form>
+    <DataListSearch v-model="searchQuery" placeholder="姓名 / 学院 / 职称 / 角色" :count="filteredData.length" @search="handleSearch">
+    </DataListSearch>
 
     <!-- Toolbar -->
-    <div v-if="canManage" class="mb-4 flex justify-between items-center">
-      <div class="flex flex-wrap gap-2">
+    <div v-if="canManage" class="data-list-toolbar">
+      <div class="data-list-actions">
         <el-button @click="handleAdd">
           <el-icon class="mr-1"><Plus /></el-icon>新增
         </el-button>
         <el-button type="primary" @click="openImport">
           <el-icon class="mr-1"><Upload /></el-icon>导入 Excel
         </el-button>
+        <el-button type="primary" plain @click="cohortImportVisible = true">批量导入学生与导师</el-button>
         <el-button type="warning" @click="openTimetableImport">
           <el-icon class="mr-1"><Calendar /></el-icon>导入课表
         </el-button>
@@ -71,10 +51,11 @@
         <template #default="{ row }">
           <el-tag :type="row.isActive === false ? 'info' : 'success'" size="small">{{ row.isActive === false ? '已停用' : '在用' }}</el-tag>
           <el-tag v-if="row.memberEligible === false" size="small" type="warning" class="ml-1">仅主席/组长</el-tag>
+          <el-tag v-if="row.expertOnly" size="small" type="warning" class="ml-1">仅普通专家</el-tag>
           <el-tag v-if="row.isSoftwareTeacher" size="small" class="ml-1">软件学院</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="title" label="职称" width="100" />
+      <el-table-column prop="title" label="职称 / 待确认身份" min-width="180" />
       <el-table-column prop="roles" label="可担任角色" min-width="150">
         <template #default="{ row }">
           <el-tag v-for="role in row.roles" :key="role" size="small" class="mr-1 mb-1">{{ role }}</el-tag>
@@ -96,7 +77,7 @@
       </el-table-column>
     </el-table>
 
-    <div class="mt-4 flex justify-end">
+    <div class="data-list-pagination">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
@@ -104,6 +85,7 @@
         :total="filteredData.length"
         layout="total, sizes, prev, pager, next, jumper"
         background
+        :pager-count="5"
         @size-change="handlePageSizeChange"
         @current-change="handlePageChange"
       />
@@ -127,7 +109,8 @@
           <el-switch v-model="form.isExternal" />
         </el-form-item>
         <el-form-item label="参与排期"><el-switch v-model="form.isActive" active-text="在用" inactive-text="停用" /></el-form-item>
-        <el-form-item label="适合担任组员"><el-switch v-model="form.memberEligible" /><span class="text-xs text-gray-500 ml-2">关闭后仅可担任主席或组长。</span></el-form-item>
+        <el-form-item label="适合担任组员"><el-switch v-model="form.memberEligible" :disabled="form.expertOnly" /><span class="text-xs text-gray-500 ml-2">关闭后仅可担任主席或组长。</span></el-form-item>
+        <el-form-item label="仅普通专家"><el-switch v-model="form.expertOnly" /><span class="text-xs text-gray-500 ml-2">启用后不允许担任主席、组长或秘书，职称不代表角色授权。</span></el-form-item>
         <el-form-item label="计为软件学院导师"><el-switch v-model="form.isSoftwareTeacher" /><span class="text-xs text-gray-500 ml-2">补充认定；非外院且学院含“软件”时自动计入。</span></el-form-item>
         <el-form-item label="职称" prop="title">
           <el-select v-model="form.title" placeholder="请选择职称" style="width: 100%">
@@ -138,13 +121,15 @@
             <el-option label="副研究员" value="副研究员" />
             <el-option label="讲师" value="讲师" />
             <el-option label="其他" value="其他" />
+            <el-option label="外院导师（职称待确认）" value="外院导师（职称待确认）" />
+            <el-option label="职称待确认" value="职称待确认" />
           </el-select>
         </el-form-item>
         <el-form-item label="可担任角色" prop="roles">
           <el-select v-model="form.roles" multiple placeholder="请选择可担任角色" style="width: 100%">
-            <el-option label="主席" value="主席" />
-            <el-option label="组长" value="组长" />
-            <el-option label="秘书" value="秘书" />
+            <el-option label="主席" value="主席" :disabled="form.expertOnly" />
+            <el-option label="组长" value="组长" :disabled="form.expertOnly" />
+            <el-option label="秘书" value="秘书" :disabled="form.expertOnly" />
             <el-option label="普通专家" value="普通专家" />
           </el-select>
         </el-form-item>
@@ -181,17 +166,21 @@
     </el-dialog>
 
     <ImportDialog v-if="canManage" v-model="importVisible" type="teacher" @success="fetchData" />
+    <CohortImportDialog v-if="canManage" v-model="cohortImportVisible" @success="fetchData" />
     <TimetableImportDialog v-if="canManage" v-model="timetableImportVisible" @success="fetchData" />
   </div>
 </template>
 
 <script setup lang="ts">
 import PreparationGuide from '../../components/PreparationGuide.vue'
-import { computed, ref, reactive, onMounted } from 'vue'
+import DataListSearch from '../../components/DataListSearch.vue'
+import { matchesListSearch } from '../../utils/listSearch'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { Search, Plus, Upload, Delete, Calendar } from '@element-plus/icons-vue'
+import { Plus, Upload, Delete, Calendar } from '@element-plus/icons-vue'
 import ImportDialog from '../../components/ImportDialog.vue'
+import CohortImportDialog from '../../components/CohortImportDialog.vue'
 import TimetableImportDialog from '../../components/TimetableImportDialog.vue'
 import { listTeachers, createTeacher, updateTeacher, deleteTeacher, batchDeleteTeachers } from '../../api/teacher'
 import type { Teacher } from '../../types/teacher'
@@ -202,6 +191,7 @@ const submitLoading = ref(false)
 const batchDeleteLoading = ref(false)
 const dialogVisible = ref(false)
 const importVisible = ref(false)
+const cohortImportVisible = ref(false)
 const timetableImportVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
@@ -248,11 +238,7 @@ const handleBatchDelete = () => {
   }).catch(() => {})
 }
 
-const searchForm = reactive({
-  name: '',
-  college: '',
-  title: ''
-})
+const searchQuery = ref('')
 
 const defaultForm: Omit<Teacher, 'id'> = {
   name: '',
@@ -260,6 +246,7 @@ const defaultForm: Omit<Teacher, 'id'> = {
   isExternal: false,
   isActive: true,
   memberEligible: true,
+  expertOnly: false,
   isSoftwareTeacher: false,
   title: '讲师',
   roles: [],
@@ -271,6 +258,7 @@ const defaultForm: Omit<Teacher, 'id'> = {
 }
 
 const form = reactive<Teacher>({ id: 0, ...defaultForm })
+watch(() => form.expertOnly, value => { if (value) { form.roles = ['普通专家']; form.memberEligible = true } })
 
 const rules = reactive<FormRules>({
   name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
@@ -295,12 +283,7 @@ const fetchData = async () => {
 }
 
 const handleSearch = () => {
-  filteredData.value = allData.value.filter(item => {
-    const matchName = !searchForm.name || item.name.includes(searchForm.name)
-    const matchCollege = !searchForm.college || item.college.includes(searchForm.college)
-    const matchTitle = !searchForm.title || item.title === searchForm.title
-    return matchName && matchCollege && matchTitle
-  })
+  filteredData.value = allData.value.filter(item => matchesListSearch(searchQuery.value, [item.name, item.college, item.title, item.roles, item.isExternal ? "外院" : "校内"]))
   currentPage.value = 1
   selectedIds.value = []
 }
@@ -314,12 +297,6 @@ const handlePageSizeChange = () => {
   selectedIds.value = []
 }
 
-const resetSearch = () => {
-  searchForm.name = ''
-  searchForm.college = ''
-  searchForm.title = ''
-  handleSearch()
-}
 
 const handleAdd = () => {
   if (!requireAdmin()) return

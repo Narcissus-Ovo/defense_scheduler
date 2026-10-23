@@ -1,47 +1,30 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-sm">
+  <div class="data-list-page bg-white rounded-lg shadow-sm">
     <PreparationGuide title="学生名单" description="确认学号、导师、所属校区和参与环节，避免遗漏本次答辩的学生。" />
-    <!-- Search Bar -->
-    <el-form :inline="true" :model="searchForm" class="mb-4">
-      <el-form-item label="姓名">
-        <el-input v-model="searchForm.name" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" style="width: 180px" />
-      </el-form-item>
-      <el-form-item label="学号">
-        <el-input v-model="searchForm.studentNo" placeholder="请输入学号" clearable @keyup.enter="handleSearch" style="width: 180px" />
-      </el-form-item>
-      <el-form-item label="导师">
-        <el-input v-model="searchForm.mentorName" placeholder="请输入导师" clearable @keyup.enter="handleSearch" style="width: 180px" />
-      </el-form-item>
-      <el-form-item label="所属校区">
-        <el-select v-model="searchForm.campus" placeholder="选择校区" clearable style="width: 180px">
-          <el-option label="创新港" value="创新港" />
-          <el-option label="兴庆" value="兴庆" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="分组环节">
-        <el-select v-model="currentGroupDefenseType" style="width: 150px" @change="fetchData">
-          <el-option label="预答辩" value="预答辩" />
-          <el-option label="正式答辩" value="正式答辩" />
-          <el-option label="中期答辩" value="中期答辩" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="handleSearch">
-          <el-icon class="mr-1"><Search /></el-icon>搜索
-        </el-button>
-        <el-button @click="resetSearch">重置</el-button>
-      </el-form-item>
-    </el-form>
+    <div v-if="!loading && allData.length" class="workflow-note participation-note" role="status">
+      <p>{{ participation.hint }}</p>
+      <div class="participation-links">
+        <el-button v-for="type in participation.availableTypes" :key="type" link type="primary" @click="switchParticipation(type)">查看{{ type }}人数与分组</el-button>
+        <el-button v-if="canManage && participation.unassigned" link type="primary" @click="assignUnassigned">为未设置环节的 {{ participation.unassigned }} 位学生补充参与环节</el-button>
+      </div>
+    </div>
+    <DataListSearch v-model="searchQuery" placeholder="姓名 / 学号 / 导师 / 校区 / 参与环节" :count="filteredData.length" @search="handleSearch">
+      <label class="data-view-control"><span>分组显示</span><el-select v-model="currentGroupDefenseType" aria-label="分组显示环节">
+        <el-option v-for="type in allDefenseTypes" :key="type" :label="type" :value="type" />
+      </el-select></label>
+    </DataListSearch>
 
     <!-- Toolbar -->
-    <div v-if="canManage" class="mb-4 flex justify-between items-center">
-      <div class="flex flex-wrap gap-2">
+    <div v-if="canManage" class="data-list-toolbar">
+      <div class="data-list-actions">
         <el-button @click="handleAdd">
           <el-icon class="mr-1"><Plus /></el-icon>新增
         </el-button>
         <el-button type="primary" @click="openImport">
           <el-icon class="mr-1"><Upload /></el-icon>导入 Excel
         </el-button>
+        <el-button type="primary" plain @click="cohortImportVisible = true">批量导入学生与导师</el-button>
+        <el-button :disabled="!selectedIds.length" @click="openParticipation">设置参与环节</el-button>
         <el-button 
           type="danger" 
           :disabled="!selectedIds.length" 
@@ -82,6 +65,7 @@
       <el-table-column prop="campus" label="所属校区" width="100" />
       <el-table-column prop="defenseTypes" label="参与环节" min-width="150">
         <template #default="{ row }">
+          <el-tag v-if="row.participationExcluded" type="info" size="small">不参加本次答辩</el-tag>
           <el-tag v-for="type in row.defenseTypes" :key="type" size="small" class="mr-1 mb-1">{{ type }}</el-tag>
         </template>
       </el-table-column>
@@ -100,7 +84,7 @@
       </el-table-column>
     </el-table>
 
-    <div class="mt-4 flex justify-end">
+    <div class="data-list-pagination">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
@@ -108,12 +92,20 @@
         :total="filteredData.length"
         layout="total, sizes, prev, pager, next, jumper"
         background
+        :pager-count="5"
         @size-change="handlePageSizeChange"
         @current-change="handlePageChange"
       />
     </div>
 
     <!-- Dialog -->
+    <el-dialog v-model="participationVisible" title="补充学生参与环节" width="min(500px, 94vw)" :close-on-click-modal="false">
+      <p class="mb-4">为 {{ participationIds.length }} 位学生添加以下环节，保留原有环节及其他资料。</p>
+      <el-checkbox-group v-model="participationTypes" aria-label="学生参与环节">
+        <el-checkbox v-for="type in allDefenseTypes" :key="type" :value="type">{{ type }}</el-checkbox>
+      </el-checkbox-group>
+      <template #footer><el-button :disabled="participationSaving" @click="participationVisible = false">取消</el-button><el-button type="primary" :loading="participationSaving" :disabled="!participationTypes.length" @click="saveParticipation">确认补充</el-button></template>
+    </el-dialog>
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑学生' : '新增学生'"
@@ -186,18 +178,25 @@
     </el-dialog>
 
     <ImportDialog v-if="canManage" v-model="importVisible" type="student" @success="fetchData" />
+    <CohortImportDialog v-if="canManage" v-model="cohortImportVisible" @success="fetchData" />
   </div>
 </template>
 
 <script setup lang="ts">
 import PreparationGuide from '../../components/PreparationGuide.vue'
-import { computed, ref, reactive, onMounted } from 'vue'
+import DataListSearch from '../../components/DataListSearch.vue'
+import { matchesListSearch } from '../../utils/listSearch'
+import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { DefenseType } from '../../domain/defense'
-import { Search, Plus, Upload, Delete } from '@element-plus/icons-vue'
+import { Plus, Upload, Delete } from '@element-plus/icons-vue'
 import ImportDialog from '../../components/ImportDialog.vue'
-import { listStudents, createStudent, updateStudent, deleteStudent, batchDeleteStudents } from '../../api/student'
+import CohortImportDialog from '../../components/CohortImportDialog.vue'
+import { listStudents, createStudent, updateStudent, deleteStudent, batchDeleteStudents, addStudentDefenseTypes } from '../../api/student'
+import { defenseTypes as allDefenseTypes } from '../../domain/defense'
+import { summarizeParticipation } from '../../utils/studentParticipation'
+import { useDefenseType } from '../../utils/useDefenseType'
 import { listTeachers } from '../../api/teacher'
 import type { Teacher } from '../../types/teacher'
 import type { Student } from '../../types/student'
@@ -208,6 +207,7 @@ const submitLoading = ref(false)
 const batchDeleteLoading = ref(false)
 const dialogVisible = ref(false)
 const importVisible = ref(false)
+const cohortImportVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
 const relationTeachers = ref<Teacher[]>([])
@@ -216,7 +216,31 @@ const syncMentorName = (id?: number) => { form.mentorId = id || null; if (id) fo
 const syncSecretaryName = (id?: number) => { form.secretaryId = id || null; form.secretaryName = id ? relationTeachers.value.find(teacher => teacher.id === id)?.name || '' : '' }
 const allData = ref<Student[]>([])
 const filteredData = ref<Student[]>([])
-const currentGroupDefenseType = ref<DefenseType>('预答辩')
+const currentGroupDefenseType = useDefenseType()
+const participation = computed(() => summarizeParticipation(allData.value, currentGroupDefenseType.value))
+const participationVisible = ref(false)
+const participationSaving = ref(false)
+const participationIds = ref<number[]>([])
+const participationTypes = ref<DefenseType[]>([])
+function switchParticipation(type: DefenseType) { currentGroupDefenseType.value = type }
+function openParticipation() {
+  if (!requireAdmin()) return
+  participationIds.value = [...selectedIds.value]; participationTypes.value = [currentGroupDefenseType.value]; participationVisible.value = true
+}
+function assignUnassigned() {
+  if (!requireAdmin()) return
+  participationIds.value = allData.value.filter(student => !student.defenseTypes?.length && !student.participationExcluded).map(student => student.id)
+  participationTypes.value = [currentGroupDefenseType.value]; participationVisible.value = true
+}
+async function saveParticipation() {
+  if (!requireAdmin() || !participationTypes.value.length || !participationIds.value.length) return
+  participationSaving.value = true
+  try {
+    const result = await addStudentDefenseTypes(participationIds.value, participationTypes.value)
+    ElMessage.success(result.message); participationVisible.value = false; await fetchData()
+  } catch (error) { ElMessage.error(error instanceof Error ? error.message : '参与环节保存失败') }
+  finally { participationSaving.value = false }
+}
 const selectedIds = ref<number[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -258,12 +282,7 @@ const handleBatchDelete = () => {
   }).catch(() => {})
 }
 
-const searchForm = reactive({
-  name: '',
-  studentNo: '',
-  mentorName: '',
-  campus: ''
-})
+const searchQuery = ref('')
 
 const defaultForm: Omit<Student, 'id'> = {
   name: '',
@@ -290,27 +309,24 @@ const rules = reactive<FormRules>({
   defenseTypes: [{ required: true, type: 'array', message: '请选择参与环节', trigger: 'change' }]
 })
 
+let fetchNumber = 0
 const fetchData = async () => {
+  const request = ++fetchNumber
   loading.value = true
   try {
     const data = await listStudents(currentGroupDefenseType.value)
+    if (request !== fetchNumber) return
     allData.value = data
     handleSearch()
   } catch (error) {
-    ElMessage.error('获取学生数据失败')
+    if (request === fetchNumber) ElMessage.error('获取学生数据失败')
   } finally {
-    loading.value = false
+    if (request === fetchNumber) loading.value = false
   }
 }
 
 const handleSearch = () => {
-  filteredData.value = allData.value.filter(item => {
-    const matchName = !searchForm.name || item.name.includes(searchForm.name)
-    const matchStudentNo = !searchForm.studentNo || (item.studentNo || '').includes(searchForm.studentNo)
-    const matchMentor = !searchForm.mentorName || item.mentorName.includes(searchForm.mentorName)
-    const matchCampus = !searchForm.campus || item.campus === searchForm.campus
-    return matchName && matchStudentNo && matchMentor && matchCampus
-  })
+  filteredData.value = allData.value.filter(item => matchesListSearch(searchQuery.value, [item.name, item.studentNo, item.mentorName, item.campus, item.defenseTypes, item.studentType]))
   currentPage.value = 1
   selectedIds.value = []
 }
@@ -324,13 +340,6 @@ const handlePageSizeChange = () => {
   selectedIds.value = []
 }
 
-const resetSearch = () => {
-  searchForm.name = ''
-  searchForm.studentNo = ''
-  searchForm.mentorName = ''
-  searchForm.campus = ''
-  handleSearch()
-}
 
 const handleAdd = () => {
   if (!requireAdmin()) return
@@ -396,6 +405,7 @@ const openImport = () => {
   importVisible.value = true
 }
 
+watch(currentGroupDefenseType, () => { void fetchData() })
 onMounted(() => {
   fetchData()
   listTeachers().then(teachers => { relationTeachers.value = teachers }).catch(() => ElMessage.error('导师与秘书选项读取失败，请刷新重试'))

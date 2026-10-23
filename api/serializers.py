@@ -4,7 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from rest_framework import serializers
-from scheduling.policies import scenario_policy
+from scheduling.policies import scenario_policy, effective_teacher_roles
 
 from .models import Group, OperationLog, Room, RuleConfig, ScheduleVersion, Student, Teacher
 from .services.reference_data import ReferenceDataError, sync_student_references, sync_teacher_rename
@@ -149,6 +149,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     isExternal = serializers.BooleanField(source='is_external', default=False, required=False)
     isActive = serializers.BooleanField(source='is_active', default=True, required=False)
     memberEligible = serializers.BooleanField(source='member_eligible', default=True, required=False)
+    expertOnly = serializers.BooleanField(source='expert_only', required=False)
     isSoftwareTeacher = serializers.BooleanField(source='is_software_teacher', default=False, required=False)
     availableTypes = serializers.JSONField(source='available_types', default=list, required=False)
     campusPreference = serializers.CharField(source='campus_preference', allow_blank=True, required=False)
@@ -159,7 +160,7 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = [
-            'id', 'name', 'college', 'isExternal', 'isActive', 'memberEligible', 'isSoftwareTeacher', 'title', 'roles',
+            'id', 'name', 'college', 'isExternal', 'isActive', 'memberEligible', 'expertOnly', 'isSoftwareTeacher', 'title', 'roles',
             'availableTypes', 'campusPreference', 'unavailableTimes',
             'avoidTeacherNames', 'remark'
         ]
@@ -175,10 +176,25 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        data['roles'] = effective_teacher_roles(instance)
         data['isSoftwareTeacher'] = instance.is_software_teacher or (
             not instance.is_external and '软件' in (instance.college or '')
         )
         return data
+
+    def validate(self, attrs):
+        if 'roles' in attrs:
+            attrs['roles'] = effective_teacher_roles({
+                'roles': attrs['roles'],
+                'member_eligible': attrs.get('member_eligible',getattr(self.instance,'member_eligible',True)),
+                'expert_only': attrs.get('expert_only',getattr(self.instance,'expert_only',False)),
+            })
+        expert_only = attrs.get('expert_only', getattr(self.instance, 'expert_only', False))
+        roles = attrs.get('roles', getattr(self.instance, 'roles', []))
+        if expert_only and (not isinstance(roles, list) or not roles
+                            or any(role not in ('普通专家', '专家', '组员', 'expert') for role in roles)):
+            raise serializers.ValidationError({'roles': ['仅普通专家的教师不能担任主席、组长或秘书']})
+        return attrs
 
     @transaction.atomic
     def create(self, validated_data):
@@ -198,6 +214,8 @@ class StudentSerializer(serializers.ModelSerializer):
     import_unique_fields = [('studentNo', '学号重复，请检查导入数据')]
 
     currentGroup = serializers.SerializerMethodField()
+    participationExcluded = serializers.SerializerMethodField()
+    campus = serializers.CharField(allow_blank=True, required=False)
     studentNo = serializers.CharField(source='student_no', allow_blank=True, allow_null=True, required=False)
     gender = serializers.CharField(allow_blank=True, required=False)
     studentType = serializers.CharField(source='student_type', required=False)
@@ -212,12 +230,16 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'id', 'name', 'studentNo', 'gender', 'studentType', 'mentorName', 'mentorId',
-            'campus', 'defenseTypes', 'secretaryName', 'secretaryId', 'currentGroup', 'remark'
+            'campus', 'defenseTypes', 'secretaryName', 'secretaryId', 'currentGroup', 'remark', 'participationExcluded'
         ]
 
     def get_currentGroup(self, instance):
         group_map = self.context.get('current_group_map')
         return group_map.get(instance.pk) if group_map is not None else None
+
+    def get_participationExcluded(self, instance):
+        from .services.student_participation import nonparticipation_reason
+        return not instance.defense_types and bool(nonparticipation_reason(instance.remark))
 
     def validate_name(self, value):
         return value.strip()
@@ -240,6 +262,12 @@ class StudentSerializer(serializers.ModelSerializer):
         # 未提供学号时按姓名兜底查重，防止同名学生在无学号场景下混淆；
         # 有学号的同名学生是合法数据（真实名单存在重名），不做姓名唯一限制
         name = attrs.get('name', self.instance.name if self.instance else None)
+        if attrs.get('campus') == '':
+            from .services.student_participation import nonparticipation_reason
+            remark = attrs.get('remark', self.instance.remark if self.instance else '')
+            types = attrs.get('defense_types', self.instance.defense_types if self.instance else [])
+            if types or not nonparticipation_reason(remark):
+                raise serializers.ValidationError({'campus': ['参排学生须明确校区；不参排须保留明确原因']})
         student_no = attrs.get('student_no', self.instance.student_no if self.instance else None)
         if name and not student_no:
             # 批量导入时的批内查重：状态挂在 view 上，逐行按顺序消费

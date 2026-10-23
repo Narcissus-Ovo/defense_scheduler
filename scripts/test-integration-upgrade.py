@@ -22,6 +22,10 @@ executor.migrate(old_target)
 apps = executor.loader.project_state(old_target).apps
 RuleConfig = apps.get_model('api', 'RuleConfig')
 ScheduleVersion = apps.get_model('api', 'ScheduleVersion')
+Teacher = apps.get_model('api', 'Teacher')
+Student = apps.get_model('api', 'Student')
+teacher = Teacher.objects.create(name='合成旧外院教师', title='教授', is_external=True, roles=['主席'])
+student = Student.objects.create(name='合成旧学生', student_no='UPGRADE001', mentor_id=teacher.pk)
 old_pre = {'expertCount': {'target': 4, 'min': 4, 'max': None},
            'startDate': '2031-07-14', 'softWeights': {'balanceStudentCount': 23}}
 formal = {'expertCount': {'target': 5, 'min': 5}, 'startDate': '2031-07-15'}
@@ -39,9 +43,16 @@ assert RuleConfig.objects.get(defense_type='formal').config == formal
 assert ScheduleVersion.objects.get(pk=version.pk).rules_snapshot == old_pre
 executor = MigrationExecutor(connection)
 executor.migrate(executor.loader.graph.leaf_nodes())
-evidence = {'passed': True, 'oldSchema': '0009', 'newSchema': '0010',
+latest_apps = executor.loader.project_state(executor.loader.graph.leaf_nodes()).apps
+upgraded_teacher = latest_apps.get_model('api', 'Teacher').objects.get(pk=teacher.pk)
+assert upgraded_teacher.expert_only is False
+assert upgraded_teacher.roles == ['主席']
+assert latest_apps.get_model('api', 'Student').objects.get(pk=student.pk).mentor_id == teacher.pk
+assert ScheduleVersion.objects.get(pk=version.pk).rules_snapshot == old_pre
+evidence = {'passed': True, 'oldSchema': '0009', 'newSchema': '0011',
             'preExperts': 5, 'customSettingsPreserved': True,
-            'formalUnchanged': True, 'publishedSnapshotUnchanged': True}
+            'formalUnchanged': True, 'publishedSnapshotUnchanged': True,
+            'legacyTeacherRolesPreserved': True, 'mentorLinkPreserved': True, 'expertOnlyDefaultFalse': True}
 (ROOT / '.tmp' / 'upgrade-check.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
 connection.close()
-print('PASS synthetic schema upgrade: 0009 -> 0010, pre count=5; custom settings, formal rules and published snapshots preserved.')
+print('PASS synthetic schema upgrade: 0009 -> 0010 -> 0011, pre count=5; settings, published snapshots, legacy teacher roles and mentor links preserved; expert_only defaults false.')

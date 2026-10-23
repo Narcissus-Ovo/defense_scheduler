@@ -4,6 +4,7 @@ export interface ImportOptions {
   campus?: string
   importYear?: string
   sheetName?: string
+  defenseTypes?: string
 }
 
 export interface DataImportRow {

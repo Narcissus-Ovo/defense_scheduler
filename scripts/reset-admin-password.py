@@ -16,7 +16,7 @@
     .venv\\Scripts\\python scripts\\reset-admin-password.py --username admin --password "MyPass123"
 
     # 数据目录有多个时，用 --app-data 明确指定
-    .venv\\Scripts\\python scripts\\reset-admin-password.py --app-data "release\\campus-blue-20260919\\app-data" --username admin --generate
+    .venv\\Scripts\\python scripts\\reset-admin-password.py --app-data "release\\app-data" --username admin --generate
 
 注意：重置前请先关闭正在运行的程序，避免数据库文件被占用。
 """

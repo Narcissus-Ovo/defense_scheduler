@@ -12,6 +12,8 @@ export { toBackendDefenseType } from '../domain/defense'
 import { toBackendDefenseType } from '../domain/defense'
 
 const USE_MOCK = runtimeConfig.useMock
+// Full-cohort personnel matching can take several minutes before returning.
+const GENERATION_TIMEOUT_MS = 10 * 60 * 1000
 
 /**
  * 规范化排期结果，确保字段命名一致（random_seed -> randomSeed 等）。
@@ -147,7 +149,7 @@ async function generateScheduleWithOptions(
   const storageKey = `pending-generation-${defenseType}`
   const result = await request.post('/schedule/generate/', {
     rules, request_key: generationKey(storageKey, rules)
-  }, { timeout: 120000 }) as ScheduleResult
+  }, { timeout: GENERATION_TIMEOUT_MS }) as ScheduleResult
   sessionStorage.removeItem(storageKey)
   return normalizeScheduleResult(result)
 }
@@ -175,7 +177,7 @@ export async function generateLinkedSchedule(preConfig: RuleConfig, formalConfig
   const storageKey = 'pending-generation-linked'
   const result = await request.post('/schedule/generate-linked/', {
     ...payload, request_key: generationKey(storageKey, payload)
-  }, { timeout: 120000 }) as LinkedScheduleResult
+  }, { timeout: GENERATION_TIMEOUT_MS }) as LinkedScheduleResult
   sessionStorage.removeItem(storageKey)
   return {
     pre: normalizeScheduleResult(result.pre),

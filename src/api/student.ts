@@ -114,3 +114,11 @@ export const batchDeleteStudents = async (ids: number[]) => {
     }, 300)
   })
 }
+
+export const addStudentDefenseTypes = async (ids: number[], defenseTypes: DefenseType[]) => {
+  if (!USE_MOCK) return request.post('/students/batch-defense-types/', { ids, defenseTypes }) as Promise<{ message: string }>
+  studentsData = repository.read().map(student => ids.includes(student.id)
+    ? { ...student, defenseTypes: [...new Set([...student.defenseTypes, ...defenseTypes])] } : student)
+  repository.write(studentsData)
+  return { message: `已为 ${ids.length} 位学生补充参与环节` }
+}

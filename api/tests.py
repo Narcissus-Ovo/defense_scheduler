@@ -513,7 +513,7 @@ class IntegrationContractTests(TestCase):
         leader = Teacher.objects.get(name='宋永红')
         secretary = Teacher.objects.get(name='田暄')
         self.assertEqual(leader.college, '软件学院')
-        self.assertEqual(leader.roles, ['组长', '主席'])
+        self.assertEqual(leader.roles, ['组长', '主席', '普通专家'])
         self.assertEqual(secretary.roles, ['秘书'])
 
     def test_student_import_accepts_midterm_location_sheet_with_header_after_blank_row(self):

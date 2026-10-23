@@ -28,13 +28,18 @@
         <el-alert v-if="loadError" :title="loadError" type="error" :closable="false" class="mb-4" show-icon />
         <div class="wizard-materials">
           <article v-for="item in materials" :key="item.kind" class="wizard-material">
-            <div class="material-top"><h3>{{ item.title }}</h3><el-tag :type="item.count ? 'success' : 'warning'">{{ loading || loadError ? '待确认' : item.count ? `已有 ${item.count} ${item.unit}` : '需要补充' }}</el-tag></div>
+            <div class="material-top"><h3>{{ item.title }}</h3><el-tag :type="item.count ? 'success' : 'warning'">{{ loading || loadError ? '待确认' : item.count ? `已有 ${item.count} ${item.unit}` : item.kind === 'student' && participation.total ? '本环节待确认' : '需要补充' }}</el-tag></div>
+            <p v-if="item.kind === 'student' && !loading && !loadError">{{ participation.hint }}</p>
             
-            <div class="flex flex-wrap gap-2"><el-button @click="importKind = item.kind; importVisible = true">导入{{ item.shortTitle }}</el-button><RouterLink :to="preparationLink(item.path)" class="text-link">查看 / 新增 / 修改 →</RouterLink></div>
+            <div class="flex flex-wrap gap-2"><el-button v-if="item.kind !== 'student' || !participation.total" @click="importKind = item.kind; importVisible = true">导入{{ item.shortTitle }}</el-button><RouterLink :to="preparationLink(item.path)" class="text-link">{{ item.kind === 'student' && participation.total && !item.count ? '核对参与环节' : '查看 / 新增 / 修改' }} →</RouterLink></div>
           </article>
         </div>
+        <div v-if="!loading && !loadError && participation.total && !participation.current" class="workflow-note participation-note">
+          <p>已有学生名单，请核对参与环节，无需重复导入。{{ participation.unassigned ? '未设置环节的学生可在学生管理中批量补充。' : '' }}</p>
+          <div class="participation-links"><el-button v-for="type in participation.availableTypes" :key="type" link type="primary" @click="selectType(type)">切换到{{ type }}</el-button></div>
+        </div>
         <div v-if="!loading && !loadError" class="workflow-note mt-4" aria-live="polite">
-          <strong>{{ missingMaterials.length ? `还需补充：${missingMaterials.map(item => item.title).join('、')}` : '三份资料均有记录，可以继续确认安排要求。' }}</strong>
+          <strong>{{ missingMaterials.length ? `还需核对本次资料：${missingMaterials.map(item => item.kind === 'student' && participation.total ? '学生参与环节' : item.title).join('、')}` : '三份资料均有记录，可以继续确认安排要求。' }}</strong>
         </div>
         <div v-if="mentorWarnings.length && !loading && !loadError" class="wizard-attention">
           <strong>建议先核对导师信息</strong><p>{{ mentorWarnings.slice(0, 5).join('；') }}{{ mentorWarnings.length > 5 ? `；另有 ${mentorWarnings.length - 5} 项` : '' }}</p>
@@ -59,7 +64,7 @@
         <el-button v-if="step > 1" :disabled="busy" @click="go(step - 1)">← 上一步</el-button>
         <RouterLink v-else :to="workflowLink('/dashboard')" class="text-link">稍后再安排</RouterLink>
         <div class="wizard-footer-next">
-          <span v-if="step === 2 && missingMaterials.length">补齐资料后即可继续</span>
+          <span v-if="step === 2 && missingMaterials.length">核对本次所需资料后即可继续</span>
           <span v-if="step === 4 && !resultState.hasResult">先生成草稿，再继续</span>
           <el-button v-if="step < 5" type="primary" size="large" :loading="saving" :disabled="!canContinue" @click="next">{{ nextLabels[step - 1] }} →</el-button>
           <el-button v-else type="primary" size="large" :disabled="busy" @click="router.push(workflowLink('/dashboard'))">返回工作台</el-button>
@@ -90,6 +95,7 @@ import type { ScheduleWorkflowState } from '../types/schedule'
 import RuleConfigForm from '../components/RuleConfigForm.vue'
 import ImportDialog from '../components/ImportDialog.vue'
 import ScheduleResult from './schedule/ScheduleResult.vue'
+import { summarizeParticipation } from '../utils/studentParticipation'
 
 const router = useRouter()
 const route = useRoute()
@@ -124,6 +130,7 @@ const importKind = ref<'student' | 'teacher' | 'classroom'>('student')
 const importVisible = ref(false)
 const resultState = ref<ScheduleWorkflowState>({ hasResult: false, status: 'draft', errorCount: 0, busy: true })
 const participants = computed(() => students.value.filter(student => student.defenseTypes.includes(defenseType.value)))
+const participation = computed(() => summarizeParticipation(students.value, defenseType.value))
 const materials = computed(() => [
   { kind: 'student' as const, title: '学生名单', shortTitle: '学生', path: '/students', count: participants.value.length, unit: '人', hint: `参加${defenseType.value}的学生。请核对学号、导师和参与环节。` },
   { kind: 'teacher' as const, title: '教师与专家', shortTitle: '教师', path: '/teachers', count: teachers.value.filter(t => t.isActive !== false && (!t.availableTypes.length || t.availableTypes.includes(defenseType.value))).length, unit: '人', hint: '核对职称、可担任角色、不可用时间。课表可在教师管理中导入。' },
@@ -193,6 +200,10 @@ watch(step, async (value, previous) => {
   stepHeading.value?.closest('.el-main')?.scrollTo({ top: 0 })
   stepHeading.value?.focus({ preventScroll: true })
 })
-watch(defenseType, () => { config.value = null; ruleErrors.value = []; if (step.value > 1) void go(1) })
+watch(defenseType, () => {
+  config.value = null; savedFingerprint.value = ''; ruleErrors.value = []
+  if (step.value === 2) void loadInputs()
+  else if (step.value > 2) void go(1)
+})
 onMounted(() => { if (step.value > 1) void loadInputs() })
 </script>
