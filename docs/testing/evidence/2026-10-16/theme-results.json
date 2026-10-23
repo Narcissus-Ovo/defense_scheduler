@@ -1,0 +1,22 @@
+[
+  {
+    "url": "/schedule-results?type=预答辩",
+    "expected_color": "rgb(222, 235, 247)",
+    "found": false
+  },
+  {
+    "url": "/schedule-results?type=正式答辩",
+    "expected_color": "rgb(157, 195, 230)",
+    "found": false
+  },
+  {
+    "url": "/schedule-results?type=中期答辩",
+    "expected_color": "rgb(46, 117, 182)",
+    "found": false
+  },
+  {
+    "url": "/teachers",
+    "expected_color": "rgb(244, 177, 131)",
+    "found": false
+  }
+]

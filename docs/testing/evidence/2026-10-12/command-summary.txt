@@ -1,0 +1,37 @@
+[django-check.log]
+System check identified no issues (0 silenced).
+[migrations.log]
+No changes detected
+[backend-tests.log]
+----------------------------------------------------------------------
+Ran 243 tests in 42.953s
+
+OK (skipped=2)
+Destroying test database for alias 'default'...
+
+Found 243 test(s).
+System check identified no issues (0 silenced).
+[frontend-lint.log]
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm notice:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+npm notice New minor version of npm available! 11.8.0 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice
+[frontend-domain.log]
+
+> workspace@0.0.0 test:domain
+> node scripts/test-frontend-domain.cjs
+
+Frontend domain checks passed: V2 policy, legacy migration, request isolation, safe PDF HTML, shared demo storage
+[frontend-build.log]
+anualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.39s
+npm notice
+npm notice New minor version of npm available! 11.8.0 -> 11.21.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.0
+npm notice To update run: npm install -g npm@11.21.0
+npm notice

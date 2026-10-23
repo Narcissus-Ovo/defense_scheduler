@@ -1,0 +1,297 @@
+{
+  "executed_at": "2026-10-16T16:14:57.052Z",
+  "input_sha256": "1849c0bce22b0b8ff0dacacd9687a449a79cfa22b378fa6fd61f77b40238a129",
+  "scope": "实际TS函数与实际API合成输出、真实Mock生成器；非评分公式签认/浏览器验收",
+  "cases": [
+    {
+      "id": "QUALITY-empty",
+      "expected": "无分组不伪造评分；分子分母0且无NaN",
+      "status": "passed",
+      "actual": {
+        "defenseType": "正式答辩",
+        "totalScore": 0,
+        "maxScore": 0,
+        "scores": [],
+        "suggestions": [
+          {
+            "id": 1,
+            "level": "info",
+            "title": "评分范围",
+            "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+          }
+        ],
+        "generatedAt": "2026/10/17 00:14:57"
+      }
+    },
+    {
+      "id": "QUALITY-all-zero",
+      "expected": "五项权重全0时无评分项、无除零",
+      "status": "passed",
+      "actual": {
+        "defenseType": "正式答辩",
+        "totalScore": 0,
+        "maxScore": 0,
+        "scores": [],
+        "suggestions": [
+          {
+            "id": 1,
+            "level": "info",
+            "title": "评分范围",
+            "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+          }
+        ],
+        "generatedAt": "2026/10/17 00:14:57"
+      }
+    },
+    {
+      "id": "QUALITY-single-zero",
+      "expected": "关闭一个已实现指标后不进入分子分母，其他项不变",
+      "status": "passed",
+      "actual": {
+        "defenseType": "正式答辩",
+        "totalScore": 1000,
+        "maxScore": 1000,
+        "scores": [
+          {
+            "key": "preferSeniorTeacher",
+            "label": "正高专家优先",
+            "score": 500,
+            "maxScore": 500,
+            "description": "2 / 2 组由教授担任主席或组长"
+          },
+          {
+            "key": "avoidCrossCampus",
+            "label": "减少跨校区",
+            "score": 500,
+            "maxScore": 500,
+            "description": "12 个教师出席日中，0 个涉及同日跨校区"
+          }
+        ],
+        "suggestions": [
+          {
+            "id": 1,
+            "level": "info",
+            "title": "评分范围",
+            "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+          }
+        ],
+        "generatedAt": "2026/10/17 00:14:57"
+      }
+    },
+    {
+      "id": "QUALITY-missing-data",
+      "expected": "缺职称/身份的指标不冒充0分或满分",
+      "status": "passed",
+      "actual": {
+        "defenseType": "正式答辩",
+        "totalScore": 400,
+        "maxScore": 500,
+        "scores": [
+          {
+            "key": "balanceStudentCount",
+            "label": "学生人数均衡",
+            "score": 400,
+            "maxScore": 500,
+            "description": "每组人数与目标平均相差 1.0 人"
+          }
+        ],
+        "suggestions": [
+          {
+            "id": 1,
+            "level": "info",
+            "title": "评分范围",
+            "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+          }
+        ],
+        "generatedAt": "2026/10/17 00:14:57"
+      }
+    },
+    {
+      "id": "QUALITY-all-five",
+      "expected": "有数据与五项正权重时五项均应计算",
+      "status": "failed",
+      "error": "Expected values to be strictly equal:\n\n3 !== 5\n"
+    },
+    {
+      "id": "QUALITY-data-driven-campus",
+      "expected": "跨校区指标随实际排期变化，非固定演示分",
+      "status": "passed",
+      "actual": {
+        "one": {
+          "key": "avoidCrossCampus",
+          "label": "减少跨校区",
+          "score": 500,
+          "maxScore": 500,
+          "description": "6 个教师出席日中，0 个涉及同日跨校区"
+        },
+        "two": {
+          "key": "avoidCrossCampus",
+          "label": "减少跨校区",
+          "score": 0,
+          "maxScore": 500,
+          "description": "6 个教师出席日中，6 个涉及同日跨校区"
+        }
+      }
+    },
+    {
+      "id": "QUALITY-repeat",
+      "expected": "相同输入评分/解释一致，执行时间除外",
+      "status": "passed",
+      "actual": {
+        "stable": true
+      }
+    },
+    {
+      "id": "QUALITY-demo-active-path",
+      "expected": "真实及演示数据使用页面共同评分函数；演示结果有限数值",
+      "status": "passed",
+      "actual": {
+        "demo_groups": 3,
+        "summary": {
+          "defenseType": "正式答辩",
+          "totalScore": 1500,
+          "maxScore": 1500,
+          "scores": [
+            {
+              "key": "balanceStudentCount",
+              "label": "学生人数均衡",
+              "score": 500,
+              "maxScore": 500,
+              "description": "每组人数与目标平均相差 0.0 人"
+            },
+            {
+              "key": "preferSeniorTeacher",
+              "label": "正高专家优先",
+              "score": 500,
+              "maxScore": 500,
+              "description": "3 / 3 组由教授担任主席或组长"
+            },
+            {
+              "key": "avoidCrossCampus",
+              "label": "减少跨校区",
+              "score": 500,
+              "maxScore": 500,
+              "description": "14 个教师出席日中，0 个涉及同日跨校区"
+            }
+          ],
+          "suggestions": [
+            {
+              "id": 1,
+              "level": "info",
+              "title": "评分范围",
+              "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+            }
+          ],
+          "generatedAt": "2026/10/17 00:14:57"
+        },
+        "scope": "实际生成Mock数据与页面公共函数；不是Mock浏览器端到端"
+      }
+    },
+    {
+      "id": "QUALITY-no-workload-total",
+      "expected": "评审次数均等不进入总分",
+      "status": "passed",
+      "actual": {
+        "keys": [
+          "balanceStudentCount",
+          "preferSeniorTeacher",
+          "avoidCrossCampus"
+        ],
+        "scope": "不判定均等容差，容差待A确认"
+      }
+    }
+  ],
+  "counts": {
+    "passed": 8,
+    "failed": 1
+  },
+  "observations": [
+    {
+      "id": "QUALITY-legacy-unused",
+      "active": false,
+      "equal": false,
+      "note": "旧optimizationMock函数保留固定85/70分，但当前页面两种模式共用optimization.ts；作为非活跃代码风险，不另计在用产品缺陷",
+      "old": {
+        "defenseType": "正式答辩",
+        "totalScore": 1175,
+        "maxScore": 2500,
+        "scores": [
+          {
+            "key": "balanceStudentCount",
+            "label": "学生人数均衡",
+            "score": 400,
+            "maxScore": 500,
+            "description": "各组人数与目标值(6)的平均偏差为 1.0 人"
+          },
+          {
+            "key": "preferSeniorTeacher",
+            "label": "正高专家优先",
+            "score": 0,
+            "maxScore": 500,
+            "description": "共有 0 组由正高专家担任主席/组长，占比 0%"
+          },
+          {
+            "key": "avoidCrossCampus",
+            "label": "减少跨校区",
+            "score": 425,
+            "maxScore": 500,
+            "description": "大部分专家已安排在常驻校区，仅存在少量跨校区排期。"
+          },
+          {
+            "key": "externalMentorConcentration",
+            "label": "外院导师集中",
+            "score": 350,
+            "maxScore": 500,
+            "description": "部分校外专家学生已实现集中排期。"
+          }
+        ],
+        "suggestions": [
+          {
+            "id": 2,
+            "level": "warning",
+            "title": "正高专家参与度偏低",
+            "description": "建议增加正高职称专家担任组长或主席的比例。"
+          }
+        ],
+        "generatedAt": "2026/10/17 00:14:57"
+      },
+      "current": {
+        "defenseType": "正式答辩",
+        "totalScore": 1400,
+        "maxScore": 1500,
+        "scores": [
+          {
+            "key": "balanceStudentCount",
+            "label": "学生人数均衡",
+            "score": 400,
+            "maxScore": 500,
+            "description": "每组人数与目标平均相差 1.0 人"
+          },
+          {
+            "key": "preferSeniorTeacher",
+            "label": "正高专家优先",
+            "score": 500,
+            "maxScore": 500,
+            "description": "2 / 2 组由教授担任主席或组长"
+          },
+          {
+            "key": "avoidCrossCampus",
+            "label": "减少跨校区",
+            "score": 500,
+            "maxScore": 500,
+            "description": "12 个教师出席日中，0 个涉及同日跨校区"
+          }
+        ],
+        "suggestions": [
+          {
+            "id": 1,
+            "level": "info",
+            "title": "评分范围",
+            "description": "仅对具备数据的指标评分。外院导师集中、学硕优先暂未评估；评分不替代发布前的冲突校验。"
+          }
+        ],
+        "generatedAt": "2026/10/17 00:14:57"
+      }
+    }
+  ]
+}

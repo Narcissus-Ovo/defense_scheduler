@@ -1,0 +1,10 @@
+{
+  "executable": "D:\\Study\\defense_scheduler\\release\\qa-20261016\\DefenseScheduler.exe",
+  "sha256": "a47d10ff50eedfa98f8709f98c79ceaa180022fe770f2951bcffeb51cf9dfdaa",
+  "startup_and_bundled_frontend": "passed",
+  "v2_migration_and_policy": "passed",
+  "stable_teacher_student_ids": "passed",
+  "linked_same_session_avoidance_and_idempotency": "passed",
+  "publish_excel_word_exports": "passed",
+  "database_integrity": "passed"
+}

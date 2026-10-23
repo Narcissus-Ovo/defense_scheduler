@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "scope": "证据/产物一致性，非产品验收通过",
+  "quality_counts": {
+    "passed": 8,
+    "failed": 1
+  },
+  "student_contract_counts": {
+    "passed": 2,
+    "failed": 1,
+    "partial": 1
+  },
+  "browser_student_group": "failed",
+  "browser_zero_weight": "passed",
+  "business_source_unchanged": true,
+  "business_database_unchanged": true,
+  "original_fixture_database_unchanged": true,
+  "prior_archived_evidence_unchanged": true,
+  "existing_candidate_zip_integrity": "ok",
+  "existing_candidate_hashes_match": true,
+  "candidate_sha256": {
+    "DefenseScheduler.exe": "a47d10ff50eedfa98f8709f98c79ceaa180022fe770f2951bcffeb51cf9dfdaa",
+    "DefenseScheduler-QA-20261016-win-x64.zip": "c59281f0adf7166497937dcb6e1cf7cd836f8a83cfc915e87a393f34b7158358",
+    "README-QA.txt": "97c41b6561179d7b72a176985233f5ae1ee5ac338fc58c92f12f34854aaec292"
+  },
+  "new_candidate_built": false,
+  "reason_no_rebuild": "业务及生产前端未改变且无修复提交，保留10-16候选；重复构建不能关闭业务缺陷"
+}

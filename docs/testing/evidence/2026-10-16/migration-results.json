@@ -1,0 +1,55 @@
+{
+  "executed_at": "2026-10-16T21:14:17.603672+08:00",
+  "empty_database": {
+    "stage": "latest",
+    "teachers": 0,
+    "students": 0,
+    "pending_migrations": 0,
+    "integrity": "ok",
+    "foreign_key_errors": 0
+  },
+  "legacy_before": {
+    "stage": "0008",
+    "teachers": 2,
+    "students": 1,
+    "snapshot": {
+      "fixture": "QA已发布历史快照",
+      "student": "QA旧学生"
+    },
+    "export_snapshot": [
+      {
+        "fixture": "QA旧导出快照"
+      }
+    ],
+    "integrity": "ok",
+    "foreign_key_errors": 0
+  },
+  "upgrade_copy": {
+    "stage": "latest",
+    "teachers": 2,
+    "students": 1,
+    "pending_migrations": 0,
+    "relations_preserved": true,
+    "frozen_snapshots_preserved": true,
+    "group_memberships_preserved": true,
+    "custom_rules_preserved": true,
+    "integrity": "ok",
+    "foreign_key_errors": 0
+  },
+  "restore_to_new_path": {
+    "stage": "latest",
+    "teachers": 2,
+    "students": 1,
+    "pending_migrations": 0,
+    "relations_preserved": true,
+    "frozen_snapshots_preserved": true,
+    "group_memberships_preserved": true,
+    "custom_rules_preserved": true,
+    "integrity": "ok",
+    "foreign_key_errors": 0
+  },
+  "original_legacy_file_unchanged": true,
+  "backup_manifest_hash_verified": true,
+  "scope": "合成0008资料副本升级0009；不是用户真实业务库升级，不包含旧EXE二进制回退",
+  "evidence_directory": ".tmp\\acceptance-20261016\\migration-20261016-211414-202817"
+}
