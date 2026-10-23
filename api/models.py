@@ -6,6 +6,7 @@ class Teacher(models.Model):
     is_external = models.BooleanField(default=False, verbose_name="是否外院")
     is_active = models.BooleanField(default=True, verbose_name="是否启用")
     member_eligible = models.BooleanField(default=True, verbose_name="是否可担任普通专家")
+    expert_only = models.BooleanField(default=False, verbose_name="仅可担任普通专家")
     is_software_teacher = models.BooleanField(default=False, verbose_name="是否软件学院导师")
     title = models.CharField(max_length=20, verbose_name="职称")  # 教授/副教授/讲师
     roles = models.JSONField(default=list, verbose_name="可担任角色")

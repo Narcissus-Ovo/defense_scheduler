@@ -50,6 +50,7 @@ IMPORT_HEADER_ALIASES = {
     '是否启用': 'isActive',
     '是否适合当组员': 'memberEligible',
     '是否可担任普通专家': 'memberEligible',
+    '仅普通专家': 'expertOnly',
     '软件学院导师': 'isSoftwareTeacher',
     '是否软件学院导师': 'isSoftwareTeacher',
     '导师编号': 'mentorId',
@@ -84,7 +85,7 @@ IMPORT_HEADER_ALIASES = {
 IMPORT_KNOWN_FIELDS = {
     'id', 'name', 'college', 'isExternal', 'is_external', 'title', 'roles',
     'isActive', 'is_active', 'memberEligible', 'member_eligible', 'isSoftwareTeacher', 'is_software_teacher',
-    'mentorId', 'secretaryId',
+    'mentorId', 'secretaryId', 'expertOnly', 'expert_only',
     'availableTypes', 'available_types', 'campusPreference', 'campus_preference',
     'unavailableTimes', 'unavailable_times', 'avoidTeacherNames', 'avoid_teacher_names',
     'remark', 'studentType', 'student_type', 'mentorName', 'mentor_name', 'campus',
@@ -462,7 +463,7 @@ class ImportMixin:
                                 processed_row[field] = split_import_list_text(val)
                     
                     bool_fields = ['isExternal', 'is_external', 'isActive', 'is_active',
-                        'memberEligible', 'member_eligible', 'isSoftwareTeacher', 'is_software_teacher']
+                        'memberEligible', 'member_eligible', 'isSoftwareTeacher', 'is_software_teacher', 'expertOnly', 'expert_only']
                     for field in bool_fields:
                         if field in processed_row and isinstance(processed_row[field], str):
                             processed_row[field] = processed_row[field].lower() in ['true', '1', '是', 'yes']
@@ -727,8 +728,41 @@ class StudentViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
     permission_classes = [IsAdminOrReadOnly]
+
+    @action(detail=False, methods=['post'], url_path='batch-defense-types')
+    def batch_defense_types(self, request):
+        ids, types = request.data.get('ids'), request.data.get('defenseTypes')
+        if (not isinstance(ids, list) or not ids or len(ids) > MAX_IMPORT_ROWS
+                or any(type(pk) is not int or pk <= 0 for pk in ids)):
+            return Response({'error': '请选择 1～1000 位学生'}, status=400)
+        if (not isinstance(types, list) or not types
+                or any(value not in DEFENSE_TYPE_LABELS.values() for value in types)):
+            return Response({'error': '请选择有效的答辩环节'}, status=400)
+        students = list(Student.objects.select_for_update().filter(pk__in=ids))
+        if len(students) != len(set(ids)):
+            return Response({'error': '部分学生已不存在，请刷新后重试'}, status=400)
+        from .services.student_participation import nonparticipation_reason
+        if any(nonparticipation_reason(student.remark) for student in students):
+            return Response({'error': '所选学生含明确不参加本次答辩者；如已恢复参加，请先核对并更正其备注和校区'}, status=400)
+        for student in students:
+            student.defense_types = list(dict.fromkeys([*(student.defense_types or []), *types]))
+        Student.objects.bulk_update(students, ['defense_types'])
+        return Response({'message': f'已为 {len(students)} 位学生补充参与环节', 'count': len(students)})
+
+    @action(detail=False, methods=['post'], url_path='import-cohort')
+    def import_cohort(self, request):
+        from .services.cohort_import import import_cohort
+        from rest_framework.exceptions import ValidationError
+        try:
+            result = import_cohort(request)
+            code = 400 if result.get('canImport') is False and not result.get('preview') else 200
+            return Response(result, status=code)
+        except (ValueError, ValidationError) as exc:
+            return Response({'error': str(exc)}, status=400)
     import_header_aliases = {
         '参加答辩类型': 'defenseTypes',
+        '参与环节': 'defenseTypes',
+        '参与答辩类型': 'defenseTypes',
     }
 
     def get_serializer_context(self):
@@ -807,6 +841,12 @@ class StudentViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
     def prepare_import_row(self, processed_row, filename):
         self._normalize_student_no(processed_row)
 
+        from .services.student_participation import nonparticipation_reason
+        if nonparticipation_reason(processed_row.get('remark')):
+            processed_row['defenseTypes'] = []
+            processed_row['campus'] = normalize_campus_text(processed_row.get('campus') or '')
+            return processed_row
+
         if processed_row.get('campus'):
             processed_row['campus'] = normalize_campus_text(processed_row.get('campus'))
 
@@ -819,6 +859,20 @@ class StudentViewSet(AuditedDataMixin, ImportMixin, ModelViewSet):
             inferred = infer_defense_types_from_filename(filename)
             if inferred:
                 defense_types = inferred
+                processed_row['defenseTypes'] = defense_types
+
+        explicit_types = getattr(self, 'request', None)
+        explicit_types = explicit_types.data.get('defenseTypes') if explicit_types else None
+        if explicit_types:
+            try:
+                explicit_types = json.loads(explicit_types) if isinstance(explicit_types, str) else explicit_types
+            except (TypeError, ValueError):
+                raise ValueError('补充参与环节格式不正确')
+            if (not isinstance(explicit_types, list) or not explicit_types
+                    or any(value not in DEFENSE_TYPE_LABELS.values() for value in explicit_types)):
+                raise ValueError('请选择有效的补充参与环节')
+            if not defense_types:
+                defense_types = list(dict.fromkeys(explicit_types))
                 processed_row['defenseTypes'] = defense_types
 
         existing = self._find_existing_student(processed_row)

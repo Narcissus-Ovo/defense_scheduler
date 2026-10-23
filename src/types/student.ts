@@ -7,8 +7,9 @@ export interface Student {
   studentType: string
   mentorName: string
   mentorId?: number | null
-  campus: '创新港' | '兴庆'
+  campus: '创新港' | '兴庆' | ''
   defenseTypes: string[]
+  participationExcluded?: boolean
   secretaryName: string
   secretaryId?: number | null
   currentGroup?: string

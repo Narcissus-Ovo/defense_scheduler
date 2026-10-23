@@ -165,3 +165,24 @@ a:focus-visible, summary:focus-visible { outline: 2px solid #00467f; outline-off
 .form-help-trigger { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 6px; border: 1px solid #bdcada; border-radius: 50%; color: var(--campus-blue); background: white; cursor: help; font-size: 12px; }
 .app-content .el-avatar { background: var(--campus-blue); }
 @media (max-width: 760px) { .defense-choice { min-height: 88px; } .wizard-entry { padding: 20px; } }
+
+.data-list-page { padding: 24px; min-width: 0; }
+.data-search { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid #e1e7ef; margin-bottom: 20px; }
+.data-search > .el-input { flex: 1; min-width: 220px; max-width: 540px; }
+.data-search-count { color: #617083; font-size: 13px; white-space: nowrap; }
+.data-view-control { margin-left: auto; display: flex; align-items: center; gap: 8px; color: #617083; font-size: 13px; }
+.data-view-control .el-select { width: 138px; }
+.data-list-toolbar, .data-list-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.data-list-toolbar { justify-content: space-between; margin-bottom: 20px; }
+.data-list-actions > .el-button + .el-button { margin-left: 0; }
+.data-list-pagination { display: flex; justify-content: flex-end; overflow-x: auto; padding: 20px 0 4px; }
+.participation-note { margin-bottom: 20px; }
+.participation-note p { margin: 0 0 10px; line-height: 1.7; }
+.participation-links { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+@media (max-width: 760px) {
+  .data-list-page { padding: 16px; }
+  .data-search > .el-input { min-width: 0; flex-basis: calc(100% - 80px); }
+  .data-view-control { margin-left: 0; }
+  .data-list-pagination { justify-content: flex-start; }
+  .data-list-pagination .el-pagination { flex-wrap: wrap; row-gap: 12px; }
+}

@@ -48,6 +48,51 @@ class CommitteeV2Tests(SimpleTestCase):
         self.assertEqual(len(result['groups'][0]['expert_ids']), 4)
         self.assertEqual(result['conflicts'], [])
 
+    def test_personnel_draft_survives_missing_rooms(self):
+        result = generate_schedule(self.teachers(), [{'id': 1, 'name': 'S1'}], [], self.rules())
+        group = result['groups'][0]
+        self.assertEqual(len({group['chair_id'], *group['expert_ids']} - {None}), 5)
+        self.assertIsNotNone(group['secretary_id'])
+        self.assertIsNone(group['room_id'])
+        self.assertFalse(group['time'])
+        self.assertEqual({c['type'] for c in result['conflicts']}, {'room_or_time_unavailable'})
+
+    def test_grouping_separates_chair_only_mentors(self):
+        teachers = self.teachers(12)
+        for teacher in teachers[:2]:
+            teacher['roles'] = ['组长']
+            teacher['member_eligible'] = False
+        students = [{'id': i, 'supervisor_id': 1 if i <= 4 else 2} for i in range(1, 9)]
+        result = generate_schedule(teachers, students, [{'id': 1}], self.rules(
+            end_date='2026-10-13', group_size=8, group_min=4, group_max=8,
+            grouping='supervisor', supervisor_policy='same_group'))
+        self.assertEqual(sorted(len(g['student_ids']) for g in result['groups']), [4, 4])
+        self.assertEqual(result['conflicts'], [])
+
+    def test_grouping_reserves_chair_seat_with_four_expert_only_mentors(self):
+        teachers = self.teachers(12)
+        for teacher in teachers[:8]:
+            teacher.update(roles=['普通专家'], expert_only=True)
+        students = [{'id': i, 'supervisor_id': i} for i in range(1, 9)]
+        result = generate_schedule(teachers, students, [{'id': 1}], self.rules(
+            group_size=8, group_min=4, group_max=8, grouping='supervisor', supervisor_policy='same_group'))
+        self.assertEqual(sorted(len(g['student_ids']) for g in result['groups']), [4, 4])
+        self.assertEqual(result['conflicts'], [])
+
+    def test_optional_reviewers_leave_future_required_mentors_available(self):
+        teachers = self.teachers(14)
+        for teacher in teachers:
+            teacher['roles'] = (['普通专家'] if teacher['id'] <= 9 else
+                                ['组长'] if teacher['id'] <= 12 else ['秘书'])
+        teachers[1]['available_time'] = ['2026-10-12 12:00-18:00']
+        students = [{'id': 1, 'supervisor_id': 1}, {'id': 2, 'supervisor_id': 2}]
+        result = generate_schedule(teachers, students, [{'id': 1}, {'id': 2}], self.rules(
+            supervisor_policy='same_group', prefer_full_day_external=False))
+        # The second mentor only has the morning; spare them in optional seats.
+        for group in result['groups']:
+            mentor = group['student_ids'][0]
+            self.assertIn(mentor, {group['chair_id'], *group['expert_ids']})
+
     def test_pre_manual_edit_rejects_under_and_over_five_total_experts(self):
         under = self.check(self.group(experts=[2, 3, 4]), rules=self.rules())
         over = self.check(self.group(experts=[2, 3, 4, 5, 7]), rules=self.rules())
@@ -68,6 +113,22 @@ class CommitteeV2Tests(SimpleTestCase):
         group = result['groups'][0]
         self.assertEqual(len(set([group['chair_id'], *group['expert_ids']])), 5)
         self.assertEqual(result['conflicts'], [])
+
+    def test_fallback_room_records_its_actual_campus(self):
+        students = [{'id': 1, 'name': '跨校区合成学生', 'campus': '兴庆'}]
+        rooms = [{'id': 1, 'campus': '创新港', 'name': '异校区合成教室',
+                  'available_time': ['2026-10-12 09:00-12:00']}]
+        result = generate_schedule(self.teachers(), students, rooms, self.rules())
+        self.assertEqual(result['groups'][0]['room_id'], 1)
+        self.assertEqual(result['groups'][0]['campus'], '创新港')
+
+    def test_fallback_room_respects_destination_campus_start_date(self):
+        students = [{'id': 1, 'name': '跨校区合成学生', 'campus': '兴庆'}]
+        rooms = [{'id': 1, 'campus': '创新港', 'name': '异校区合成教室',
+                  'available_time': ['2026-10-12 09:00-12:00', '2026-10-13 09:00-12:00']}]
+        rules = self.rules(end_date='2026-10-13', campus_start_dates={'创新港': '2026-10-13'})
+        result = generate_schedule(self.teachers(), students, rooms, rules)
+        self.assertTrue(result['groups'][0]['time'].startswith('2026-10-13'), result)
 
     def test_legacy_expert_count_keeps_ordinary_expert_semantics(self):
         rules = self.rules(expert_count=2)
@@ -184,6 +245,125 @@ class CommitteeV2Tests(SimpleTestCase):
 
 
 class FormalMentorSessionV2Tests(SimpleTestCase):
+    def test_cover_expands_chairs_into_expert_seats_when_mentors_require_it(self):
+        from scheduling.session_cover import solve_session_cover
+        teachers=[parse_teacher({'id':i,'title':'教授','is_software_teacher':True,
+                  'roles':['主席'] if i<=4 else ['普通专家'] if i<=12 else ['秘书']}) for i in range(1,15)]
+        students=[parse_student({'id':i,'supervisor_id':i}) for i in range(1,5)]
+        groups=[GroupDraft('G1',None,[1,2]),GroupDraft('G2',None,[3,4])]
+        rooms=[parse_room({'id':i,'capacity':30}) for i in (1,2)]
+        slot=TimeRange(datetime(2026,10,12,9),datetime(2026,10,12,12))
+        rules={'defense_type':'formal','start_date':'2026-10-12','end_date':'2026-10-12',
+               'expert_count':5,'expert_count_includes_chair':True,'need_chair':True,
+               'chair_title':'教授','secretary_title':'讲师','avoid_supervisor':True,
+               'supervisor_policy':'avoid','formal_mentor_same_session':True,
+               'soft_weights':{'balance_software_participation':0}}
+        result=solve_session_cover(groups,students,teachers,rooms,rules,[slot],42)
+        self.assertIsNotNone(result)
+        self.assertEqual(detect_global_conflicts(result,students,teachers,rooms,rules),[])
+        self.assertTrue(any(tid<=4 for g in result for tid in g.expert_ids))
+
+    def test_equivalent_sessions_preserve_capacity_and_do_not_share_staff(self):
+        self.assert_repeated_session_cover(False)
+
+    def test_equal_teacher_availability_keeps_different_campus_room_windows(self):
+        self.assert_repeated_session_cover(True)
+
+    def assert_repeated_session_cover(self, campus_windows):
+        from scheduling.session_cover import solve_session_cover
+        teachers=[parse_teacher({'id':i,'title':'教授','is_software_teacher':True,
+                    'roles':['主席','普通专家'] if i<=12 else ['秘书']}) for i in range(1,15)]
+        students=[parse_student({'id':i,'supervisor_id':i,'campus':'A' if i<=2 else 'B'}) for i in range(1,5)]
+        groups=[GroupDraft(f'G{s.id}',s.campus if campus_windows else None,[s.id]) for s in students]
+        if not campus_windows:
+            for student in students:student.campus=None
+        slots=[TimeRange(datetime(2026,10,day,9),datetime(2026,10,day,12)) for day in (12,13)]
+        if campus_windows:
+            rooms=[parse_room({'id':i,'capacity':30,'campus':'A' if i<=2 else 'B',
+                              'available_time':[slots[0 if i<=2 else 1].label]}) for i in range(1,5)]
+        else:
+            rooms=[parse_room({'id':i,'capacity':30}) for i in (1,2)]
+        rules={'defense_type':'formal','start_date':'2026-10-12','end_date':'2026-10-13',
+               'expert_count':5,'expert_count_includes_chair':True,'need_chair':True,
+               'chair_title':'教授','secretary_title':'讲师','avoid_supervisor':True,
+               'supervisor_policy':'avoid','formal_mentor_same_session':True,
+               'soft_weights':{'balance_software_participation':0}}
+        result=solve_session_cover(groups,students,teachers,rooms,rules,slots,42)
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result),4)
+        self.assertEqual(detect_global_conflicts(result,students,teachers,rooms,rules),[])
+        self.assertEqual(sorted(sum(g.time_slot==slot for g in result) for slot in slots),[2,2])
+        if campus_windows:
+            self.assertTrue(all(g.time_slot==slots[0 if g.campus=='A' else 1] for g in result))
+        self.assertTrue(all(g.time_slot is None for g in groups))
+
+    def test_exact_cover_schedules_an_odd_cohort_as_one_valid_triple(self):
+        from scheduling.session_cover import solve_session_cover
+        teachers=[parse_teacher({'id':i,'name':f'CoverT{i}','title':'教授','is_software_teacher':True,
+                  'roles':['主席','普通专家'] if i<=15 else ['秘书']}) for i in range(1,19)]
+        students=[parse_student({'id':i,'supervisor_id':i}) for i in range(1,4)]
+        groups=[GroupDraft(f'G{i}',None,[i]) for i in range(1,4)]
+        slot=TimeRange(datetime(2026,10,12,9),datetime(2026,10,12,12))
+        rooms=[parse_room({'id':i,'capacity':30}) for i in range(1,4)]
+        rules={'defense_type':'formal','start_date':'2026-10-12','end_date':'2026-10-12',
+               'expert_count':5,'expert_count_includes_chair':True,'need_chair':True,
+               'chair_title':'教授','secretary_title':'讲师','avoid_supervisor':True,
+               'supervisor_policy':'avoid','formal_mentor_same_session':True,
+               'soft_weights':{'balance_software_participation':0}}
+        result=solve_session_cover(groups,students,teachers,rooms,rules,[slot],42)
+        self.assertIsNotNone(result)
+        self.assertEqual(detect_global_conflicts(result,students,teachers,rooms,rules),[])
+        self.assertTrue(all(group.time_slot is None for group in groups))
+        self.assertIsNone(solve_session_cover(groups,students,teachers,rooms[:2],rules,[slot],42))
+
+    def test_generation_pairs_complementary_groups_instead_of_trapping_a_shared_mentor(self):
+        teachers = [{'id': i, 'name': f'SessionT{i}', 'title': '教授',
+                     'is_software_teacher': True,
+                     'roles': ['主席', '普通专家'] if i <= 16 else ['秘书']}
+                    for i in range(1, 21)]
+        students = [{'id': i * 2 + j + 1, 'supervisor_id': tid, 'previous_group_id': f'G{i+1}'}
+                    for i, mentors in enumerate(((1, 2), (2, 3), (3, 4), (4, 1)))
+                    for j, tid in enumerate(mentors)]
+        rules = {'defense_type': 'formal', 'start_date': '2026-10-12', 'end_date': '2026-10-12',
+                 'group_size': 2, 'expert_count': 5, 'expert_count_includes_chair': True,
+                 'need_chair': True, 'chair_title': '教授', 'secretary_title': '讲师',
+                 'supervisor_policy': 'avoid', 'avoid_supervisor': True,
+                 'grouping': 'secretary', 'formal_mentor_same_session': True, 'random_seed': 42,
+                 'soft_weights': {'balance_software_participation': 0}}
+        result = generate_schedule(teachers, students, [{'id': 1}, {'id': 2}], rules)
+        self.assertEqual(result['conflicts'], [])
+        sessions = {g['group_id']: g['time'] for g in result['groups']}
+        self.assertEqual(sessions['G1'], sessions['G3'])
+        self.assertEqual(sessions['G2'], sessions['G4'])
+        self.assertNotEqual(sessions['G1'], sessions['G2'])
+
+    def test_session_matching_reserves_a_third_group_for_a_shared_external_mentor(self):
+        from scheduling.session_assignment import match_formal_session
+        teachers = []
+        for i in range(1, 19):
+            roles = ['主席'] if i in (1, 2) else ['普通专家'] if i < 16 else ['秘书']
+            if i == 15:
+                roles.append('主席')
+            teachers.append(parse_teacher({'id': i, 'title': '教授', 'roles': roles,
+                'is_software_teacher': i != 3, 'expert_only': i == 3}))
+        students = [parse_student({'id': i, 'supervisor_id': mentor})
+                    for i, mentor in enumerate((1, 3, 2, 3, 4), 1)]
+        groups = [GroupDraft('G1', None, [1, 2]), GroupDraft('G2', None, [3, 4]),
+                  GroupDraft('G3', None, [5])]
+        slot = TimeRange(datetime(2026, 10, 12, 9), datetime(2026, 10, 12, 12))
+        rules = {'defense_type': 'formal', 'need_chair': True, 'expert_count': 5,
+                 'expert_count_includes_chair': True, 'chair_title': '教授',
+                 'formal_software_min': 3, 'avoid_supervisor': True}
+        result = match_formal_session(groups, students, teachers, rules, slot)
+        self.assertIsNotNone(result)
+        self.assertIn(3, result[2].expert_ids)
+        self.assertNotIn(3, result[0].expert_ids + result[1].expert_ids)
+        people = [tid for g in result for tid in [g.chair_id, *g.expert_ids, g.secretary_id]]
+        self.assertEqual(len(people), len(set(people)))
+        self.assertTrue(all(g.time_slot is None for g in groups))
+        self.assertIsNone(match_formal_session(groups[:2], students[:4], teachers, rules, slot))
+        self.assertTrue(all(g.chair_id is None for g in groups))
+
     def check(self, second_hour=9):
         rules = {'defense_type': 'formal', 'expert_count': 0, 'need_chair': False,
                  'supervisor_policy': 'avoid', 'formal_mentor_same_session': True}
@@ -284,7 +464,7 @@ class SchedulingPreferencesV2Tests(SimpleTestCase):
         self.assertNotIn('external_mentor_group_count', {c['type'] for c in result['conflicts']})
         self.assertEqual(result['conflicts'], [])
 
-    def test_external_mentor_distribution_conflict_is_reported_across_campuses(self):
+    def test_external_mentor_distribution_is_checked_within_each_campus(self):
         teachers = [{'id': i, 'name': f'T{i}', 'title': '教授', 'is_external': i == 1}
                     for i in range(1, 7)]
         students = [{'id': i, 'name': f'S{i}', 'supervisor_id': 1,
@@ -296,7 +476,9 @@ class SchedulingPreferencesV2Tests(SimpleTestCase):
              'group_size': 2, 'group_min': 1, 'group_max': 4, 'expert_count': 5,
              'expert_count_includes_chair': True, 'need_chair': True, 'chair_title': '教授',
              'secretary_title': '讲师', 'supervisor_policy': 'same_group'})
-        self.assertIn('external_mentor_group_count', {c['type'] for c in result['conflicts']})
+        # Three students in one campus need two groups, the other campus's one
+        # student needs one. Their independent campus buckets must not conflict.
+        self.assertNotIn('external_mentor_group_count', {c['type'] for c in result['conflicts']})
 
     def test_external_mentor_small_cohort_reports_capacity_conflict_instead_of_splitting(self):
         result = self.external_schedule(student_count=2, group_max=1, group_size=1)
@@ -449,6 +631,54 @@ class CampusStartDatesV2Tests(SimpleTestCase):
 
 
 class LinkedResourcePlanningV2Tests(SimpleTestCase):
+    def test_full_reviewer_capacity_can_fail_when_software_seat_capacity_passes(self):
+        from scheduling.joint_groups import software_capacity_is_insufficient,reviewer_capacity_is_insufficient
+        teachers=[parse_teacher({'id':i,'roles':['主席','普通专家'],'is_software_teacher':True}) for i in range(1,8)]
+        students=[parse_student({'id':1,'supervisor_id':1}),parse_student({'id':2,'supervisor_id':2})]
+        batches=[[s] for s in students]
+        self.assertFalse(software_capacity_is_insufficient(batches,students,teachers))
+        self.assertTrue(reviewer_capacity_is_insufficient(batches,students,teachers))
+
+    def test_joint_grouping_preserves_enough_ordinary_mentors_for_formal_review(self):
+        self.assert_joint_grouping_preserves_formal_review(False)
+
+    def test_joint_grouping_still_supports_formal_when_chairs_can_be_experts(self):
+        self.assert_joint_grouping_preserves_formal_review(True)
+
+    def assert_joint_grouping_preserves_formal_review(self, chair_members):
+        from scheduling.joint_groups import software_capacity_is_insufficient
+        teachers=[{'id':i,'name':f'JointT{i}','title':'教授',
+                   'is_software_teacher':i<=6,'is_external':9<=i<=12,
+                   'member_eligible':i>2 or chair_members,
+                   'expert_only':9<=i<=12,
+                   'roles':['主席','组长'] if i<=2 else ['普通专家'] if i<=6 or i>=9 else ['秘书']}
+                  for i in range(1,13)]
+        mentors=[1]*4+[2]*4+[3]*2+[4]*2+[5]*2+[6]*2
+        students=[{'id':i+1,'supervisor_id':tid,'campus':'创新港'} for i,tid in enumerate(mentors)]
+        rooms=[{'id':i,'campus':'创新港','capacity':30} for i in (1,2)]
+        rules={'defense_type':'pre','start_date':'2026-10-12','end_date':'2026-10-12',
+               'group_size':4,'group_min':4,'group_max':8,'expert_count':5,'expert_count_includes_chair':True,
+               'need_chair':True,'chair_title':'副教授','secretary_title':'讲师',
+               'supervisor_policy':'same_group','grouping':'supervisor','reserve_formal_resources':True,
+               'refresh_secretary_bindings':True,'policy_version':2,
+               'soft_weights':{'balance_student_count':100,'external_mentor_concentration':0},
+               'prefer_full_day_external':False}
+        pre=generate_schedule(teachers,students,rooms,rules)
+        self.assertEqual(pre['conflicts'],[])
+        by_id={s['id']:s for s in students}
+        batches=[[parse_student(by_id[i]) for i in g['student_ids']] for g in pre['groups']]
+        self.assertFalse(software_capacity_is_insufficient(batches,[parse_student(s) for s in students],
+                                                        [parse_teacher(t) for t in teachers]))
+        formal_students=[{**by_id[i],'secretary_id':g['secretary_id'],'previous_group_id':g['group_id']}
+                         for g in pre['groups'] for i in g['student_ids']]
+        formal=generate_schedule(teachers,formal_students,rooms,{**rules,'defense_type':'formal',
+                'start_date':'2026-10-13','end_date':'2026-10-13','chair_title':'教授',
+                'supervisor_policy':'avoid','avoid_supervisor':True,'grouping':'secretary',
+                'formal_mentor_same_session':True,'soft_weights':{'balance_software_participation':0,
+                                                              'external_mentor_concentration':0}})
+        self.assertEqual(formal['conflicts'],[])
+        self.assertEqual(Counter(i for g in formal['groups'] for i in g['student_ids']),Counter(by_id.keys()))
+
     def generate_linked(self, old_secretary=None, external_mentor=False):
         teachers = [{'id': i, 'name': f'T{i:02}', 'title': '教授', 'college': '软件学院',
                      'is_software_teacher': True, 'roles': ['主席', '组长', '普通专家', '秘书']}
@@ -507,6 +737,34 @@ class LinkedResourcePlanningV2Tests(SimpleTestCase):
 
 
 class LinkedResourceServiceV2Tests(TestCase):
+    def test_no_rooms_keeps_complete_personnel_but_blocks_publication_and_export(self):
+        from django.contrib.auth.models import User
+        from rest_framework.test import APIClient
+        from .models import Student, Teacher
+        client = APIClient()
+        client.force_authenticate(User.objects.create_user('personnel-draft', is_staff=True))
+        teachers = [Teacher.objects.create(name=f'DraftT{i}', title='教授', college='软件学院',
+                    roles=['组长', '普通专家', '秘书']) for i in range(7)]
+        for i in range(6):
+            Student.objects.create(name=f'DraftS{i}', student_no=f'DRAFT{i}', campus='创新港',
+                                   mentor=teachers[0], defense_types=['预答辩'])
+        response = client.post('/api/schedule/generate/', {
+            'rules': {'defense_type': 'pre', 'policy_version': 2,
+                      'start_date': '2026-10-12', 'end_date': '2026-10-12'}}, format='json')
+        self.assertEqual(response.status_code, 200, response.data)
+        group = response.data['groups'][0]
+        self.assertEqual(len(group['students']), 6)
+        self.assertEqual(len({group['chairId'], *[t['id'] for t in group['teachers']]} - {None}), 5)
+        self.assertIsNotNone(group['secretaryId'])
+        self.assertFalse(group['date'])
+        version_id = response.data['versionId']
+        published = client.post('/api/schedule/publish/', {
+            'version_id': version_id, 'expected_revision': response.data['revision']}, format='json')
+        self.assertEqual(published.status_code, 400)
+        for endpoint in ('export-excel', 'export_word'):
+            exported = client.get(f'/api/schedule/{endpoint}/', {'version_id': version_id, 'defense_type': 'pre'})
+            self.assertEqual(exported.status_code, 400)
+
     def test_linked_replan_after_published_shared_secretary_is_valid_and_keeps_history(self):
         from django.contrib.auth.models import User
         from rest_framework.test import APIClient

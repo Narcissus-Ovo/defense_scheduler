@@ -4,6 +4,12 @@
       先检查识别结果，再确认导入。日期范围按每天对应时段展开；已有年份保持不变。
     </el-alert>
     <el-form label-position="top" :disabled="loading" class="import-options">
+      <el-form-item v-if="type === 'student'" label="文件未注明参与环节时补充为">
+        <el-checkbox-group v-model="studentDefenseTypes">
+          <el-checkbox v-for="item in allDefenseTypes" :key="item" :value="item">{{ item }}</el-checkbox>
+        </el-checkbox-group>
+        <span class="text-xs text-gray-500">默认当前环节 {{ workflowDefenseType }}；保留文件已注明的环节。</span>
+      </el-form-item>
       <el-form-item v-if="type === 'classroom'" label="文件未注明时使用的校区">
         <el-select v-model="campus" clearable placeholder="按文件识别，缺失时请选择" aria-label="导入校区" class="w-full">
           <el-option label="创新港" value="创新港" />
@@ -70,7 +76,7 @@
     </div>
     <template #footer>
       <el-button :disabled="loading" @click="visible = false">取消</el-button>
-      <el-button :disabled="!selectedFile" :loading="loading" @click="handlePreview">检查并预览</el-button>
+      <el-button :disabled="!selectedFile || (type === 'student' && !studentDefenseTypes.length)" :loading="loading" @click="handlePreview">检查并预览</el-button>
       <el-button type="primary" :disabled="!preview?.canImport" :loading="loading" @click="handleConfirm">
         确认导入{{ preview?.canImport ? ` ${preview.validCount} 条` : '' }}
       </el-button>
@@ -88,6 +94,8 @@ import { ApiRequestError } from '../api/request'
 import { previewImport, confirmImport } from '../api/import'
 import type { DataImportPreview, DataImportError, ImportModule } from '../types/import'
 import ImportPreviewDialog from './ImportPreviewDialog.vue'
+import { defenseTypes as allDefenseTypes, type DefenseType } from '../domain/defense'
+import { workflowDefenseType } from '../utils/useDefenseType'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 const props = defineProps<{ modelValue: boolean; type: ImportModule }>()
@@ -106,6 +114,7 @@ const selectedFile = ref<File | null>(null)
 const fileList = ref<UploadUserFile[]>([])
 const loading = ref(false)
 const campus = ref('')
+const studentDefenseTypes = ref<DefenseType[]>([workflowDefenseType.value])
 const importYear = ref('')
 const sheetName = ref('')
 const sheets = ref<string[]>([])
@@ -114,7 +123,8 @@ const page = ref(1)
 const pageSize = 10
 const mockPreviewVisible = ref(false)
 const pagedRows = computed(() => preview.value?.rows.slice((page.value - 1) * pageSize, page.value * pageSize) || [])
-const options = () => ({ campus: campus.value, importYear: importYear.value.trim(), sheetName: sheetName.value })
+const options = () => ({ campus: campus.value, importYear: importYear.value.trim(), sheetName: sheetName.value,
+  defenseTypes: props.type === 'student' && studentDefenseTypes.value.length ? JSON.stringify(studentDefenseTypes.value) : undefined })
 const displayValue = (value: unknown) => Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? (value ? '是' : '否') : String(value ?? '—')
 const formatImportError = (error: DataImportError) => `第 ${error.row || '?'} 行：` + Object.entries(error.errors)
   .map(([field, messages]) => `${fieldLabels[field] || '资料'}：${displayValue(messages)}`).join('；')
@@ -126,10 +136,12 @@ watch(() => props.modelValue, value => {
     fileList.value = []
     campus.value = ''
     importYear.value = ''
+    studentDefenseTypes.value = [workflowDefenseType.value]
   }
 })
 watch(visible, value => emit('update:modelValue', value))
 watch([campus, importYear, sheetName], () => { preview.value = null }, { flush: 'sync' })
+watch(studentDefenseTypes, () => { preview.value = null }, { deep: true, flush: 'sync' })
 
 function clearFile() {
   selectedFile.value = null
@@ -149,7 +161,7 @@ function showError(error: unknown) {
   ElMessage.error({ message: details?.map(formatImportError).join('；') || (error instanceof Error ? error.message : '导入失败，请检查文件'), duration: 8000, showClose: true })
 }
 async function handlePreview() {
-  if (!selectedFile.value) return
+  if (!selectedFile.value || (props.type === 'student' && !studentDefenseTypes.value.length)) return
   if (USE_MOCK) { mockPreviewVisible.value = true; return }
   loading.value = true
   preview.value = null

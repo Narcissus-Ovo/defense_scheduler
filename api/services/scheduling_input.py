@@ -2,6 +2,7 @@
 from ..models import Room, ScheduleVersion, Student, Teacher
 from ..serializers import DEFENSE_TYPE_LABELS
 from .time_data import parse_time_entries, split_time_text
+from .student_participation import nonparticipation_reason
 
 def build_algorithm_input(defense_type, date_range=None, rules=None, *, secretary_bindings=None):
     """按答辩类型过滤参与者并转换为算法输入结构。
@@ -73,6 +74,7 @@ def build_algorithm_input(defense_type, date_range=None, rules=None, *, secretar
             'roles': teacher.roles,
             'is_active': teacher.is_active,
             'member_eligible': teacher.member_eligible,
+            'expert_only': teacher.expert_only,
             'is_software_teacher': teacher.is_software_teacher or (not teacher.is_external and '软件' in teacher.college),
             'available_time': unavailable_times,
             'availability_invalid': bool(invalid_times),
@@ -100,7 +102,8 @@ def build_algorithm_input(defense_type, date_range=None, rules=None, *, secretar
     for student in students:
         defense_types = student.defense_types or []
         if not defense_types:
-            missing_type_students.append(student)
+            if not nonparticipation_reason(student.remark):
+                missing_type_students.append(student)
             continue
         if defense_label not in defense_types:
             continue
