@@ -1,7 +1,7 @@
 """Retain enough mentor attendance to staff the linked formal defense."""
 from collections import defaultdict
 
-from .policies import committee_member_target, is_software_teacher, teacher_can_role
+from .policies import committee_member_target, is_software_teacher, teacher_can_role, pre_mentor_committee
 
 
 def software_capacity_is_insufficient(batches, students, teachers, minimum=3):
@@ -19,6 +19,38 @@ def reviewer_capacity_is_insufficient(batches, students, teachers, reviewers_per
     reviewers={t.id for t in teachers if teacher_can_role(t,'expert') or teacher_can_role(t,'chair')}
     occurrences=sum(len({s.supervisor_id for s in batch}&reviewers) for batch in batches)
     return occurrences+len(reviewers-mentors)*(len(batches)//2)<reviewers_per_group*len(batches)
+
+
+def _redistribute_internal_mentors(bins, internal_ids, chair_ids, required, minimum, maximum, compatible):
+    """Keep external mentor parts and a qualified chair in every donor group."""
+    for batch in bins:
+        while len({s.supervisor_id for s in batch}) < required:
+            if len(batch) >= maximum:
+                return False
+            mentors = {s.supervisor_id for s in batch}
+            moved = False
+            for donor in sorted(bins, key=lambda b: (len({s.supervisor_id for s in b}), len(b)), reverse=True):
+                if donor is batch or len(donor) <= minimum or donor[0].campus != batch[0].campus:
+                    continue
+                for student in donor:
+                    if student.supervisor_id not in internal_ids or student.supervisor_id in mentors:
+                        continue
+                    remaining = [s for s in donor if s.id != student.id]
+                    if len({s.supervisor_id for s in remaining}) < required:
+                        continue
+                    if not any(s.supervisor_id in chair_ids for s in remaining):
+                        continue
+                    if not compatible(batch + [student]) or not compatible(remaining):
+                        continue
+                    donor.remove(student)
+                    batch.append(student)
+                    moved = True
+                    break
+                if moved:
+                    break
+            if not moved:
+                return False
+    return True
 
 
 def build_linked_student_groups(students, teachers, rules):
@@ -42,7 +74,7 @@ def build_linked_student_groups(students, teachers, rules):
             external_parts.extend((batch[:middle],batch[middle:]) if len(batch)>=3 else (batch,))
         elif teacher_can_role(teacher,'chair'):
             chairs.extend(batch)
-        elif is_software_teacher(teacher) and teacher_can_role(teacher,'expert'):
+        elif teacher_can_role(teacher,'expert'):
             ordinary.extend(batch)
         else:return None
     # Spread designated chairs independently of their additional expert role.
@@ -50,7 +82,9 @@ def build_linked_student_groups(students, teachers, rules):
     # who can chair those groups under formal supervisor avoidance.
     chair_ids={s.supervisor_id for s in chairs}
     ordinary_ids={s.supervisor_id for s in ordinary}
-    minimum=int(rules['group_min']);maximum=int(rules['group_max']);target=int(rules['group_size'])
+    target=int(rules['group_size'])
+    minimum=int(rules.get('group_min', 0) or 0)
+    maximum=int(rules.get('group_max', 0) or target)
     bins=[]
     def compatible(batch):
         from algorithm import meets_chair_requirement
@@ -58,7 +92,8 @@ def build_linked_student_groups(students, teachers, rules):
         chair_only={tid for tid in ids if not teacher_can_role(teacher_map[tid],'expert')}
         external={tid for tid in ids if teacher_map[tid].is_external}
         can_chair=any(teacher_can_role(teacher_map[tid],'chair') and meets_chair_requirement(teacher_map[tid],rules) for tid in ids)
-        return len(chair_only)<=1 and len(external)<=2 and len(ids)<=committee_member_target(rules)+int(can_chair)
+        mentor_limit = (max(5, committee_member_target(rules)+1) if rules.get('reserve_formal_resources') else maximum) if pre_mentor_committee(rules) else committee_member_target(rules)+int(can_chair)
+        return len(chair_only)<=1 and len(external)<=2 and len(ids)<=mentor_limit
     for part in sorted(external_parts,key=lambda batch:(-len(batch),batch[0].campus or '',batch[0].id)):
         external_ids={s.supervisor_id for s in part}
         host=next((batch for batch in bins if batch[0].campus==part[0].campus
@@ -91,5 +126,15 @@ def build_linked_student_groups(students, teachers, rules):
                     donor.remove(movable);batch.append(movable);found=True;break
             if not found:break
     if any(not minimum<=len(batch)<=maximum or not compatible(batch) for batch in bins):return None
+    if pre_mentor_committee(rules):
+        from algorithm import meets_chair_requirement
+        qualified_chairs = {tid for tid in chair_ids if meets_chair_requirement(teacher_map[tid], rules)}
+        if not _redistribute_internal_mentors(bins, ordinary_ids | chair_ids, qualified_chairs,
+                                             committee_member_target(rules)+1, minimum, maximum, compatible):
+            return None
+        for batch in bins:
+            ids={s.supervisor_id for s in batch}
+            if len(ids)<committee_member_target(rules)+1:return None
+            if not any(teacher_can_role(teacher_map[tid],'chair') and meets_chair_requirement(teacher_map[tid],rules) for tid in ids):return None
     if sorted(s.id for batch in bins for s in batch)!=sorted(s.id for s in students):return None
     return bins

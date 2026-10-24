@@ -69,12 +69,12 @@ class IntegratedSupervisorChecks(SimpleTestCase):
         result = generate_schedule(
             [{'id': number, 'name': f'合成专家{number}', 'title': '教授'}
              for number in range(1, 7)],
-            [{'id': 1, 'name': '合成学生', 'supervisor_id': 1}],
+            [{'id': i, 'name': f'合成学生{i}', 'supervisor_id': i} for i in range(1, 6)],
             [{'id': 1, 'capacity': 30,
               'available_time': ['2031-07-14 08:50-18:10']}],
             {'defense_type': 'pre', 'policy_version': 2,
              'start_date': '2031-07-14', 'end_date': '2031-07-14',
-             'group_size': 1, 'group_min': 1, 'group_max': 1,
+             'group_size': 5, 'group_min': 5, 'group_max': 5,
              'expert_count': 5, 'expert_min': 5, 'need_chair': True,
              'expert_count_includes_chair': True, 'chair_title': '教授',
              'secretary_title': '讲师', 'supervisor_policy': 'same_group'},

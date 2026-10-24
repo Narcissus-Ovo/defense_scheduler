@@ -172,8 +172,8 @@ class IntegrationContractTests(TestCase):
         self.assertEqual(response.data['defenseType'], '预答辩')
         self.assertIn('studentCount', response.data)
         self.assertEqual(response.data['endDate'], (timezone.localdate() + timedelta(days=10)).isoformat())
-        # [TASK-P04 测试] API默认预答辩专家总数固定为5位。
-        self.assertEqual(response.data['expertCount']['target'], 5)
+        self.assertEqual(response.data['expertCount']['target'], 4)
+        self.assertIsNone(response.data['expertCount']['max'])
         self.assertEqual(response.data['policyVersion'], 2)
         self.assertFalse(response.data['mentorAvoidance'])
 

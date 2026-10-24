@@ -177,7 +177,7 @@
       <el-descriptions :column="1" border>
         <el-descriptions-item label="答辩类型">{{ defenseType }}</el-descriptions-item>
         <el-descriptions-item label="答辩日期">{{ generationConfig.startDate || '未设置' }} 至 {{ generationConfig.endDate || '未设置' }}</el-descriptions-item>
-        <el-descriptions-item label="每组人数">学生 {{ generationConfig.studentCount.target }} 人 / 专家 {{ generationConfig.expertCount.target }} 人 / 秘书 1 人</el-descriptions-item>
+        <el-descriptions-item label="每组人数">学生 {{ generationConfig.studentCount.target }} 人 / 专家{{ defenseType === '预答辩' ? '至少' : '目标' }} {{ defenseType === '预答辩' ? generationConfig.expertCount.min : generationConfig.expertCount.target }} 人<span v-if="defenseType !== '预答辩'">（至少 {{ generationConfig.expertCount.min }} 人）</span> / 秘书 1 人</el-descriptions-item>
         <el-descriptions-item label="参与学生">{{ generationStudentCount }} 人</el-descriptions-item>
         <el-descriptions-item label="导师安排">{{ defenseType !== '正式答辩' ? '导师与学生同组' : generationConfig.mentorAvoidance ? '导师回避自己的学生' : '不要求导师回避' }}</el-descriptions-item>
       </el-descriptions>
@@ -270,7 +270,7 @@
   <el-dialog v-model="linkedVisible" title="联合生成两阶段答辩安排" width="min(680px, 94vw)" :close-on-click-modal="false">
     <p class="mb-4">会创建两份新草稿，并为本轮重新分配秘书；正式答辩沿用本轮预答辩的学生分组和秘书。历史版本保留。</p>
     <el-descriptions v-if="linkedConfigs" :column="1" border>
-      <el-descriptions-item v-for="config in linkedConfigs" :key="config.defenseType" :label="config.defenseType">{{ config.startDate }} 至 {{ config.endDate }}；学生 {{ config.studentCount.target }} 人/组；专家 {{ config.expertCount.target }} 人（含主席/组长）</el-descriptions-item>
+      <el-descriptions-item v-for="config in linkedConfigs" :key="config.defenseType" :label="config.defenseType">{{ config.startDate }} 至 {{ config.endDate }}；学生 {{ config.studentCount.target }} 人/组；专家{{ config.defenseType === '预答辩' ? '至少' : '目标' }} {{ config.defenseType === '预答辩' ? config.expertCount.min : config.expertCount.target }} 人<span v-if="config.defenseType !== '预答辩'">（至少 {{ config.expertCount.min }} 人）</span>，含主席/组长{{ config.defenseType === '预答辩' ? '，每位评审都须有本组学生' : '' }}</el-descriptions-item>
     </el-descriptions>
     <el-alert v-if="linkedError" class="mt-4" :title="linkedError" type="warning" :closable="false" show-icon />
     <template #footer><el-button @click="linkedVisible = false">取消</el-button><el-button @click="linkedVisible = false; router.push(workflowLink('/rule-config'))">修改两阶段要求</el-button><el-button type="primary" :disabled="!linkedConfigs || !!linkedError" @click="handleGenerateLinked">确认联合生成</el-button></template>

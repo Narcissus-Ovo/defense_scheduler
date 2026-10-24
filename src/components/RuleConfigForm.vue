@@ -62,9 +62,8 @@
         <el-form-item label="每组学生人数">
           <el-input-number v-model="form.studentCount.target" :min="1" controls-position="right" class="w-full" />
         </el-form-item>
-        <!-- [TASK-P04 修改] 预答辩和正式答辩固定5位专家，中期答辩至少5位。 -->
-        <el-form-item label="专家总人数">
-          <el-input-number v-model="form.expertCount.target" :min="expertMinimum" :max="expertCountLocked ? 5 : undefined" :disabled="expertCountLocked" controls-position="right" class="w-full" />
+        <el-form-item :label="form.defenseType === '预答辩' ? '评审人数下限' : '专家目标人数'">
+          <el-input-number :model-value="expertCountInput" @change="handleExpertCountChange" :min="form.defenseType === '预答辩' ? expertMinimum : Math.max(expertMinimum, form.expertCount.min)" controls-position="right" class="w-full" />
         </el-form-item>
       </div>
       <p class="text-sm text-gray-600 mb-3">{{ expertGuidance }}；主席/组长计入专家总数，秘书单独 1 人。</p>
@@ -113,8 +112,8 @@
             <span class="text-xs text-gray-500 ml-2">上午或下午有课时，该半天不安排答辩。</span>
           </el-form-item>
           <el-form-item v-if="form.defenseType === '正式答辩'" label="软件学院专家至少">
-            <el-input-number v-model="form.formalSoftwareMin" :min="3" :max="5" />
-            <span class="text-xs text-gray-500 ml-2">5 位专家中至少 3 位来自软件学院。</span>
+            <el-input-number v-model="form.formalSoftwareMin" :min="3" :max="form.expertCount.target" />
+            <span class="text-xs text-gray-500 ml-2">本次目标 {{ form.expertCount.target }} 位专家中，至少 {{ form.formalSoftwareMin }} 位来自软件学院。</span>
           </el-form-item>
           <el-form-item v-if="form.defenseType === '正式答辩'" label="沿用预答辩分组">
             <el-switch v-model="form.preservePreDefenseGroups" />
@@ -138,8 +137,8 @@
               <el-input-number v-model="form.studentCount.max" :min="1" controls-position="right" class="w-full" />
             </el-form-item>
 
-            <el-form-item label="专家最少人数">
-              <el-input-number v-model="form.expertCount.min" :min="expertMinimum" :max="expertCountLocked ? 5 : undefined" :disabled="expertCountLocked" controls-position="right" class="w-full" />
+            <el-form-item v-if="form.defenseType !== '预答辩'" label="专家最少人数">
+              <el-input-number v-model="form.expertCount.min" :min="expertMinimum" :max="form.expertCount.target" controls-position="right" class="w-full" />
             </el-form-item>
             <el-form-item label="秘书人数">
               <el-input-number v-model="form.secretaryCount" :min="1" :max="1" disabled controls-position="right" class="w-full" />
@@ -265,13 +264,19 @@ const emit = defineEmits<{
 }>()
 
 const form = ref<RuleConfig>(normalizeRuleConfig(JSON.parse(JSON.stringify(props.modelValue))))
-const expertMinimum = 5
-const expertCountLocked = computed(() => form.value.defenseType !== '中期答辩')
+const expertMinimum = computed(() => form.value.defenseType === '预答辩' ? 4 : 5)
+const expertCountInput = computed(() => form.value.defenseType === '预答辩' ? form.value.expertCount.min : form.value.expertCount.target)
+const handleExpertCountChange = (value: number | null | undefined) => {
+  if (value == null) return
+  if (form.value.defenseType === '预答辩') form.value.expertCount = { target: value, min: value }
+  else form.value.expertCount.target = value
+  if (form.value.defenseType === '正式答辩' && (form.value.formalSoftwareMin || 0) > value) form.value.formalSoftwareMin = value
+}
 const expertGuidance = computed(() => form.value.defenseType === '正式答辩'
-  ? '正式答辩固定 5 位专家（主席 1 位、组员 4 位）'
+  ? `正式答辩默认 5 位专家，可向上调整；本次目标 ${form.value.expertCount.target} 位，至少 ${form.value.expertCount.min} 位`
   : form.value.defenseType === '预答辩'
-    ? '预答辩固定 5 位专家（组长 1 位、普通专家 4 位）'
-    : '中期答辩至少 5 位专家')
+    ? `预答辩默认至少 4 位专家，可向上调整；本次至少 ${form.value.expertCount.min} 位（含组长），按本组导师人数安排；每位评审都须有本组学生`
+    : `中期答辩至少 ${form.value.expertCount.min} 位专家`)
 
 const disableEndDate = (date: Date) => {
   if (!form.value.startDate) return false

@@ -10,7 +10,7 @@ import secrets
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from scheduling.continuity import formal_mentor_session_violations, inherited_group_labels
-from scheduling.policies import committee_member_target, committee_violations, is_software_teacher, teacher_can_role, secretary_is_qualified
+from scheduling.policies import committee_member_target, committee_violations, is_software_teacher, teacher_can_role, secretary_is_qualified, pre_mentor_committee
 from scheduling.preferences import external_full_day_gain, external_visit_cost, preference_notices, software_reviewer_load
 
 
@@ -124,6 +124,18 @@ def generate_schedule(
     # [TASK-P05 修改] 将外院导师身份传入分组器，以执行导师学生数对应的组数规则。
     external_supervisor_ids = {teacher.id for teacher in parsed_teachers if teacher.is_external}
     grouped_students = build_student_groups(parsed_students, rules, external_supervisor_ids, parsed_teachers)
+    if pre_mentor_committee(rules):
+        from scheduling.joint_groups import build_linked_student_groups
+        teacher_map = {t.id: t for t in parsed_teachers}
+        def complete_pre_group(batch):
+            mentors = {s.supervisor_id for s in batch} - {None}
+            return (len(mentors) >= committee_member_target(rules) + 1
+                    and any(tid in teacher_map and teacher_can_role(teacher_map[tid], 'chair')
+                            and meets_chair_requirement(teacher_map[tid], rules) for tid in mentors))
+        if any(not complete_pre_group(batch) for batch in grouped_students):
+            repaired = build_linked_student_groups(parsed_students, parsed_teachers, rules)
+            if repaired is not None:
+                grouped_students = repaired
     if rules.get('defense_type')=='pre' and rules.get('reserve_formal_resources'):
         from scheduling.joint_groups import (build_linked_student_groups, software_capacity_is_insufficient,
                                              reviewer_capacity_is_insufficient)
@@ -153,7 +165,7 @@ def generate_schedule(
 
     labels = inherited_group_labels(grouped_students, rules)
     if (rules.get('defense_type') == 'formal' and rules.get('formal_mentor_same_session')
-            and rules.get('expert_count_includes_chair') and rules.get('expert_count') == 5):
+            and rules.get('expert_count_includes_chair')):
         from scheduling.session_assignment import repair_formal_sessions
         shells = [GroupDraft(label, infer_group_campus(batch), [s.id for s in batch])
                   for label, batch in zip(labels, grouped_students)]
@@ -474,7 +486,7 @@ def build_student_groups(
             return False
         # A required chair occupies one of the five review seats. Reserve it
         # when none of the required ordinary mentors can fill that role.
-        if rules.get('expert_count_includes_chair') and rules.get('defense_type') != 'mid':
+        if rules.get('expert_count_includes_chair') and rules.get('defense_type') != 'mid' and not pre_mentor_committee(rules):
             chair_from_mentors = any(teacher_can_role(t, 'chair') and meets_chair_requirement(t, rules)
                                      for t in mentors)
             return len(mentors) <= committee_member_target(rules) + int(chair_from_mentors)
@@ -729,7 +741,7 @@ def assign_teachers(
     slot = group.time_slot
     needed_experts = committee_member_target(rules)
     need_chair = bool(rules.get("need_chair", False))
-    policy = get_supervisor_policy(rules)
+    policy = 'same_group' if pre_mentor_committee(rules) else get_supervisor_policy(rules)
     soft = rules.get("soft_weights") or {}
     is_formal = rules.get('defense_type') == 'formal'
 
@@ -888,7 +900,7 @@ def assign_teachers(
                  and not conflicts_with_selected_teachers(t.id, expert_ids, teachers)),
                 None,
             )
-        if chair is None:
+        if chair is None and not pre_mentor_committee(rules):
             chair = next(
                 (t for t in available_teachers if t.id not in expert_ids
                  and t.id not in other_group_secretary_ids
@@ -943,6 +955,10 @@ def assign_teachers(
             pending_supervisor_ids if pending_supervisor_ids is not None
             else peer_mentor_ids if reserve_formal else set())),
     ))
+    # Every pre-defense reviewer, including the chair, must supervise a student
+    # in this group. Never fill a numerical shortfall with unrelated teachers.
+    if pre_mentor_committee(rules):
+        optional_reviewers = []
     for teacher in optional_reviewers:
         if len(expert_ids) >= needed_experts:
             break
@@ -1271,6 +1287,18 @@ def detect_global_conflicts(
     policy = get_supervisor_policy(rules)
     for draft in drafts:
         assigned_teachers = {draft.chair_id, draft.secretary_id, *draft.expert_ids}
+        reviewers = {draft.chair_id, *draft.expert_ids} - {None}
+        if pre_mentor_committee(rules):
+            mentors = {student_map[sid].supervisor_id for sid in draft.student_ids
+                       if sid in student_map and student_map[sid].supervisor_id is not None}
+            for tid in sorted(reviewers - mentors):
+                name = teacher_map[tid].name if tid in teacher_map else str(tid)
+                conflicts.append(make_conflict(
+                    'pre_reviewer_without_student',
+                    f'预答辩 {draft.group_id} 的评审 {name} 没有学生在本组'
+                    '（组长和每位专家均须有本组学生），请调整学生分组或评审人员',
+                    [draft.group_id, tid], teacher_name=name,
+                ))
         for sid in draft.student_ids:
             student = student_map.get(sid)
             if student is None or student.supervisor_id is None:
