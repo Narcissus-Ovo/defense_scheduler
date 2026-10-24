@@ -110,3 +110,65 @@ class PreMentorCommitteeTests(SimpleTestCase):
         self.assertTrue(_redistribute_internal_mentors(batches, set(range(1,8)), {1,2}, 4, 4, 8, lambda batch: True))
         self.assertTrue(all(len({s.supervisor_id for s in batch}) == 4 for batch in batches))
         self.assertTrue(all(any(s.supervisor_id in {1,2} for s in batch) for batch in batches))
+
+    def swap_batches(self, mentor_ids):
+        students = [parse_student({'id': i + 1, 'supervisor_id': tid, 'campus': '兴庆'})
+                    for i, tid in enumerate(tid for batch in mentor_ids for tid in batch)]
+        batches = []
+        offset = 0
+        for ids in mentor_ids:
+            batches.append(students[offset:offset + len(ids)])
+            offset += len(ids)
+        return batches
+
+    def test_full_group_swaps_a_duplicate_internal_mentor_student(self):
+        from scheduling.joint_groups import _redistribute_internal_mentors
+        # Four external students stay put; exchanging a chair's second student
+        # supplies a fourth mentor without increasing the seven-student cap.
+        batches = self.swap_batches([[9, 9, 9, 9, 1, 1, 2], [3, 4, 5, 6, 7]])
+        self.assertTrue(_redistribute_internal_mentors(
+            batches, set(range(1, 8)), {1, 2, 3}, 4, 5, 7, lambda batch: True))
+        self.assertEqual([len(batch) for batch in batches], [7, 5])
+        self.assertEqual({s.id for s in batches[0] if s.supervisor_id == 9}, {1, 2, 3, 4})
+        self.assertEqual(sorted(s.id for batch in batches for s in batch), list(range(1, 13)))
+        self.assertTrue(all(len({s.supervisor_id for s in batch}) >= 4 for batch in batches))
+        self.assertTrue(all(any(s.supervisor_id in {1, 2, 3} for s in batch) for batch in batches))
+
+    def test_swap_can_use_a_donor_at_the_minimum_without_losing_its_chair(self):
+        from scheduling.joint_groups import _redistribute_internal_mentors
+        batches = self.swap_batches([[9, 9, 1, 1, 2], [3, 4, 5, 6, 7]])
+        self.assertTrue(_redistribute_internal_mentors(
+            batches, set(range(1, 8)), {1, 3}, 4, 5, 7, lambda batch: True))
+        self.assertEqual([len(batch) for batch in batches], [5, 5])
+        self.assertTrue(all(any(s.supervisor_id in {1, 3} for s in batch) for batch in batches))
+        self.assertTrue(all(len({s.supervisor_id for s in batch}) >= 4 for batch in batches))
+
+    def test_swap_respects_campus_compatibility_and_preserves_external_parts(self):
+        from scheduling.joint_groups import _redistribute_internal_mentors
+        for incompatible in ('campus', 'committee'):
+            with self.subTest(incompatible=incompatible):
+                batches = self.swap_batches([[9, 9, 9, 9, 1, 1, 2], [3, 4, 5, 6, 7]])
+                before = [[s.id for s in batch] for batch in batches]
+                if incompatible == 'campus':
+                    for student in batches[1]:
+                        student.campus = '创新港'
+                compatible = lambda batch: True
+                if incompatible == 'committee':
+                    compatible = lambda batch: len({s.supervisor_id for s in batch}) <= (3 if any(s.supervisor_id == 9 for s in batch) else 7)
+                self.assertFalse(_redistribute_internal_mentors(
+                    batches, set(range(1, 8)), {1, 3}, 4, 5, 7, compatible))
+                self.assertEqual([[s.id for s in batch] for batch in batches], before)
+
+    def test_transfer_can_replenish_a_donor_through_a_third_group(self):
+        from scheduling.joint_groups import _redistribute_internal_mentors
+        # The recipient has no duplicate internal student to exchange. The only
+        # larger donor needs a replacement mentor from a minimum-size third bin.
+        batches = self.swap_batches([[9, 9, 10, 10, 1], [11, 11, 12, 1, 1, 2], [4, 4, 3, 5, 6]])
+        self.assertTrue(_redistribute_internal_mentors(
+            batches, set(range(1, 9)), {1, 4}, 4, 5, 7, lambda batch: True))
+        self.assertEqual(sorted(s.id for batch in batches for s in batch), list(range(1, 17)))
+        self.assertTrue(all(5 <= len(batch) <= 7 for batch in batches))
+        self.assertTrue(all(len({s.supervisor_id for s in batch}) >= 4 for batch in batches))
+        self.assertTrue(all(any(s.supervisor_id in {1, 4} for s in batch) for batch in batches))
+        self.assertEqual([[s.id for s in batch if s.supervisor_id >= 9] for batch in batches],
+                         [[1, 2, 3, 4], [6, 7, 8], []])

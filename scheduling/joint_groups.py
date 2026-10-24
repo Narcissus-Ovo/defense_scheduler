@@ -21,35 +21,95 @@ def reviewer_capacity_is_insufficient(batches, students, teachers, reviewers_per
     return occurrences+len(reviewers-mentors)*(len(batches)//2)<reviewers_per_group*len(batches)
 
 
+def _transfer_via_exchange(batch, bins, internal_ids, chair_ids, required, minimum, maximum, compatible):
+    """Replenish a donor through an exchange before it supplies the recipient."""
+    if len(batch) >= maximum:
+        return False
+    mentors = {s.supervisor_id for s in batch}
+
+    def complete(candidate):
+        return (minimum <= len(candidate) <= maximum
+                and len({s.supervisor_id for s in candidate}) >= required
+                and any(s.supervisor_id in chair_ids for s in candidate)
+                and compatible(candidate))
+
+    for donor in bins:
+        if donor is batch or len(donor) <= minimum or donor[0].campus != batch[0].campus:
+            continue
+        for student in donor:
+            if student.supervisor_id not in internal_ids or student.supervisor_id in mentors:
+                continue
+            recipient = batch + [student]
+            if not compatible(recipient):
+                continue
+            remaining = [s for s in donor if s.id != student.id]
+            for source in bins:
+                if source is batch or source is donor or source[0].campus != batch[0].campus:
+                    continue
+                for incoming in source:
+                    if incoming.supervisor_id not in internal_ids:
+                        continue
+                    for outgoing in remaining:
+                        if outgoing.supervisor_id not in internal_ids:
+                            continue
+                        replenished = [s for s in remaining if s.id != outgoing.id] + [incoming]
+                        replacement = [s for s in source if s.id != incoming.id] + [outgoing]
+                        if not complete(replenished) or not complete(replacement):
+                            continue
+                        batch[:] = recipient
+                        donor[:] = replenished
+                        source[:] = replacement
+                        return True
+    return False
+
+
 def _redistribute_internal_mentors(bins, internal_ids, chair_ids, required, minimum, maximum, compatible):
-    """Keep external mentor parts and a qualified chair in every donor group."""
+    """Move or exchange internal students, retaining external parts and chairs."""
     for batch in bins:
         while len({s.supervisor_id for s in batch}) < required:
-            if len(batch) >= maximum:
-                return False
             mentors = {s.supervisor_id for s in batch}
             moved = False
             for donor in sorted(bins, key=lambda b: (len({s.supervisor_id for s in b}), len(b)), reverse=True):
-                if donor is batch or len(donor) <= minimum or donor[0].campus != batch[0].campus:
+                if donor is batch or donor[0].campus != batch[0].campus:
                     continue
                 for student in donor:
                     if student.supervisor_id not in internal_ids or student.supervisor_id in mentors:
                         continue
                     remaining = [s for s in donor if s.id != student.id]
-                    if len({s.supervisor_id for s in remaining}) < required:
-                        continue
-                    if not any(s.supervisor_id in chair_ids for s in remaining):
-                        continue
-                    if not compatible(batch + [student]) or not compatible(remaining):
-                        continue
-                    donor.remove(student)
-                    batch.append(student)
-                    moved = True
-                    break
+                    if (len(batch) < maximum and len(donor) > minimum
+                            and len({s.supervisor_id for s in remaining}) >= required
+                            and any(s.supervisor_id in chair_ids for s in remaining)
+                            and compatible(batch + [student]) and compatible(remaining)):
+                        donor.remove(student)
+                        batch.append(student)
+                        moved = True
+                        break
+                    # A full recipient or a minimum-size donor needs an exchange.
+                    # Only move a duplicate internal mentor's student out: this
+                    # strictly increases the recipient's mentor count, and leaves
+                    # every external mentor's student parts in their original bins.
+                    for outgoing in batch:
+                        if (outgoing.supervisor_id not in internal_ids
+                                or sum(s.supervisor_id == outgoing.supervisor_id for s in batch) < 2):
+                            continue
+                        recipient = [s for s in batch if s.id != outgoing.id] + [student]
+                        replacement = remaining + [outgoing]
+                        if (len({s.supervisor_id for s in replacement}) < required
+                                or not any(s.supervisor_id in chair_ids for s in replacement)
+                                or not compatible(recipient) or not compatible(replacement)):
+                            continue
+                        batch[:] = recipient
+                        donor[:] = replacement
+                        moved = True
+                        break
+                    if moved:
+                        break
                 if moved:
                     break
             if not moved:
-                return False
+                if not _transfer_via_exchange(batch, bins, internal_ids, chair_ids,
+                                              required, minimum, maximum, compatible):
+                    return False
     return True
 
 

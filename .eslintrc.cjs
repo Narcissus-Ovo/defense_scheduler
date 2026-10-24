@@ -21,6 +21,7 @@ module.exports = {
     'dist/',
     'node_modules/',
     'coverage/',
+    'test-data/',
     '*.config.js',
     '*.config.ts'
   ],
