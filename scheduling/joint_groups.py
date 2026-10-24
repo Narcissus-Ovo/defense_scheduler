@@ -1,7 +1,47 @@
 """Retain enough mentor attendance to staff the linked formal defense."""
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 from .policies import committee_member_target, is_software_teacher, teacher_can_role, pre_mentor_committee
+
+
+def balance_pre_student_groups(batches, teachers, rules):
+    """Prefer the target while keeping a complete mentor committee in each bin."""
+    from algorithm import meets_chair_requirement
+    from .balance import balance_student_groups
+
+    teacher_map = {t.id: t for t in teachers}
+    required = committee_member_target(rules) + 1
+    maximum = int(rules.get('group_max') or rules['group_size'])
+    mentor_limit = max(5, required) if rules.get('reserve_formal_resources') else maximum
+
+    def compatible(batch):
+        ids = {s.supervisor_id for s in batch}
+        if not ids <= teacher_map.keys() or len(ids) < required or len(ids) > mentor_limit:
+            return False
+        mentors = [teacher_map[tid] for tid in ids]
+        return (sum(not teacher_can_role(t, 'expert') for t in mentors) <= 1
+                and sum(t.is_external for t in mentors) <= 2
+                and any(teacher_can_role(t, 'chair') and meets_chair_requirement(t, rules) for t in mentors))
+
+    def can_reassign(before, after):
+        # Students may change seats between an external mentor's existing two
+        # groups, but the mentor's group identities and attendance never change.
+        for original, candidate in zip(before, after):
+            if ({s.supervisor_id for s in original if teacher_map[s.supervisor_id].is_external}
+                    != {s.supervisor_id for s in candidate if teacher_map[s.supervisor_id].is_external}):
+                return False
+        if not rules.get('reserve_formal_resources'):
+            return True
+        # Preserve mentor attendance resources for the linked formal stage.
+        # Splitting a mentor across every group leaves no group they can review
+        # under supervisor avoidance; deleting an attendance can lose a seat.
+        return (Counter(tid for b in before for tid in {s.supervisor_id for s in b})
+                == Counter(tid for b in after for tid in {s.supervisor_id for s in b}))
+
+    return balance_student_groups(
+        batches, int(rules['group_size']), int(rules.get('group_min') or 1), maximum,
+        lambda s: s.supervisor_id in teacher_map, compatible, can_reassign,
+    )
 
 
 def software_capacity_is_insufficient(batches, students, teachers, minimum=3):

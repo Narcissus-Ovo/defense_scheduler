@@ -192,3 +192,16 @@ assert.equal(matchesListSearch('外院 待确认', ['外院导师（职称待确
 assert.equal(matchesListSearch('兴庆 002', ['XQ001', '创新港']), false)
 assert.equal(matchesListSearch('   ', [null]), true)
 console.log('Participation counts and unified multi-field search passed')
+
+const { summarizeStudentCounts } = load('src/domain/studentCountSummary.ts')
+const summaryGroups = [5, 6, 6, 7].map(size => ({ students: Array(size).fill({}) }))
+const summary = summarizeStudentCounts(summaryGroups, { group_size: 6 })
+assert.equal(summary.target, 6)
+assert.equal(summary.targetGroupCount, 2)
+assert.deepEqual(summary.buckets, [
+  { size: 5, count: 1, isTarget: false }, { size: 6, count: 2, isTarget: true }, { size: 7, count: 1, isTarget: false }
+])
+assert.equal(summarizeStudentCounts(summaryGroups, { studentCount: { target: 5 } }).targetGroupCount, 1)
+assert.equal(summarizeStudentCounts(summaryGroups).target, null)
+assert.deepEqual(summarizeStudentCounts([], { group_size: 6 }).buckets, [])
+console.log('Version-specific student headcount distribution passed')

@@ -106,12 +106,12 @@ function mockPreflight(defenseType: DefenseType): PreflightResult {
   }
 }
 
-export async function preflightSchedule(rules: Record<string, unknown>): Promise<PreflightResult> {
+export async function preflightSchedule(rules: Record<string, unknown>, options?: { linkedGeneration?: boolean }): Promise<PreflightResult> {
   if (USE_MOCK) {
     const defenseType = rules.defense_type === 'formal' ? '正式答辩' : rules.defense_type === 'mid' ? '中期答辩' : '预答辩'
     return mockPreflight(defenseType as DefenseType)
   }
-  return request.post('/schedule/preflight/', { rules }) as Promise<PreflightResult>
+  return request.post('/schedule/preflight/', { rules, linked_generation: options?.linkedGeneration ?? false }) as Promise<PreflightResult>
 }
 
 export async function generateSchedule(defenseType: DefenseType, config = getDefaultRuleConfig(defenseType)) {

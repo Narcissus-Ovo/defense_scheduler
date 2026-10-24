@@ -162,8 +162,13 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         rules_raw = request.data.get('rules', {})
         if not isinstance(rules_raw, dict):
             return Response({'error': '规则必须是对象'}, status=400)
+        linked_generation = request.data.get('linked_generation', False)
+        if not isinstance(linked_generation, bool):
+            return Response({'error': '联合预检标记必须为布尔值'}, status=400)
         try:
-            result = self.preflight_check(rules_raw)
+            # A linked plan will replace old pre-defense groups. Actual formal
+            # generation still validates the freshly generated source groups.
+            result = self.preflight_check(rules_raw, check_inherited_groups=not linked_generation)
         except ValidationError as exc:
             return Response({'error': str(exc.detail if hasattr(exc, 'detail') else exc)}, status=400)
         except ValueError as exc:

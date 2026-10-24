@@ -152,6 +152,10 @@ def generate_schedule(
                            for tid in mentor_ids) for slot in candidate_slots)
         grouped_students.sort(key=mentor_opportunities)
 
+    if pre_mentor_committee(rules) and int((rules.get('soft_weights') or {}).get('balance_student_count', 50)) >= 50:
+        from scheduling.joint_groups import balance_pre_student_groups
+        balance_pre_student_groups(grouped_students, parsed_teachers, rules)
+
     drafts: List[GroupDraft] = []
     conflicts: List[dict] = []
 
@@ -523,6 +527,13 @@ def build_student_groups(
     if master_weight > 50:
         # 学硕占比高的组排前面，从而优先分配靠前的时间槽（稳定排序保持组内原序）
         groups.sort(key=lambda batch: -sum(1 for s in batch if (s.type or "") == "学硕"))
+    if rules.get('policy_version', 1) >= 2 and rules.get('defense_type') == 'formal' and balance_weight >= 50:
+        from scheduling.balance import balance_student_groups
+        # Saved pre-defense identities and secretary cohorts must remain intact.
+        flexible = [batch for batch in groups if not (grouping == 'secretary' and any(
+            s.previous_group_id is not None or s.secretary_id is not None for s in batch))]
+        balance_student_groups(flexible, target_size, max(1, min_size), max_size or target_size,
+                               lambda s: s.supervisor_id not in external_supervisor_ids, can_merge)
     return groups
 
 

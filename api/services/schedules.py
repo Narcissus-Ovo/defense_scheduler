@@ -19,7 +19,7 @@ class ScheduleApplication:
     def _normalize_rules(self, rules):
         return normalize_schedule_rules(rules)
 
-    def preflight_check(self, rules):
+    def preflight_check(self, rules, *, check_inherited_groups=True):
         """生成排期前的资料预检，返回可生成状态、错误、警告和统计信息。"""
         rules = self._normalize_rules(rules)
         payload, notices = self._build_algorithm_input(
@@ -165,6 +165,12 @@ class ScheduleApplication:
                 'suggestion': '请检查教师数据中的"可参加答辩类型"设置',
             })
 
+        from scheduling.preflight import (external_mentor_capacity_issues, inherited_group_size_issues,
+                                          resource_availability_issues)
+        errors.extend(external_mentor_capacity_issues(payload, rules))
+        if check_inherited_groups:
+            errors.extend(inherited_group_size_issues(payload, rules))
+        warnings.extend(resource_availability_issues(payload, rules))
         can_generate = len(errors) == 0
 
         return {

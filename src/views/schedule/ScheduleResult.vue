@@ -96,6 +96,20 @@
           </el-tooltip>
         </div>
       </div>
+      <section v-if="!loading && result?.groups.length" class="student-count-summary" aria-label="学生人数分布">
+        <div class="student-count-heading">
+          <strong>学生人数分布</strong>
+          <span v-if="studentCountSummary.target !== null">本版本目标 {{ studentCountSummary.target }} 人/组</span>
+          <span v-else>该版本未记录目标人数</span>
+          <span v-if="studentCountSummary.targetGroupCount !== null" class="student-count-match">达到目标 {{ studentCountSummary.targetGroupCount }} / {{ studentCountSummary.groupCount }} 组</span>
+        </div>
+        <div class="student-count-buckets">
+          <span v-for="bucket in studentCountSummary.buckets" :key="bucket.size" class="student-count-bucket" :class="{ 'is-target': bucket.isTarget }">
+            {{ bucket.size }} 人组 <strong>× {{ bucket.count }}</strong><span v-if="bucket.isTarget"> · 目标</span>
+          </span>
+        </div>
+        <p class="section-tip mt-2">统计本版本全部分组，不随日期、校区筛选改变。</p>
+      </section>
     </div>
 
     <div v-if="result?.groups.length" class="schedule-filters">
@@ -189,18 +203,18 @@
         <!-- 未预检 -->
         <div v-if="preflightStatus === 'idle'" class="preflight-idle text-sm text-gray-500 flex items-center gap-2">
           <el-icon><InfoFilled /></el-icon>
-          <span>点击生成后将自动检查资料完整性</span>
+          <span>点击生成后将自动检查资料和安排要求</span>
         </div>
         <!-- 预检中 -->
         <div v-else-if="preflightStatus === 'loading'" class="preflight-loading text-sm text-gray-600 flex items-center gap-2">
           <el-icon class="is-loading"><Loading /></el-icon>
-          <span>正在检查资料完整性...</span>
+          <span>正在检查资料和安排要求...</span>
         </div>
         <!-- 预检通过 -->
         <div v-else-if="preflightStatus === 'passed'" class="preflight-passed">
-          <el-alert type="success" :closable="false" show-icon>
+          <el-alert :type="preflightResult?.warnings.length ? 'warning' : 'success'" :closable="false" show-icon>
             <template #title>
-              <span class="text-green-700">资料齐全，可以生成</span>
+              <span>{{ preflightResult?.warnings.length ? '存在预检提醒，可继续生成草稿' : '检查通过，可以生成' }}</span>
               <span class="text-xs text-green-600 ml-2">（学生 {{ preflightResult?.stats.studentCount }} 人 · 教师 {{ preflightResult?.stats.teacherCount }} 人 · 教室 {{ preflightResult?.stats.roomCount }} 间）</span>
             </template>
           </el-alert>
@@ -235,7 +249,7 @@
                       link
                       @click="goToFixData(issue.type)"
                     >
-                      去补齐
+                      {{ ['external_mentor_capacity', 'inherited_group_size'].includes(issue.type) ? '修改要求' : '去补齐' }}
                     </el-button>
                   </div>
                 </div>
@@ -243,13 +257,13 @@
             </div>
           </div>
           <!-- 警告提示 -->
-          <div v-if="preflightResult?.warnings?.length" class="preflight-warnings">
-            <el-alert type="warning" :closable="false" show-icon class="text-xs">
-              <template #title>
-                <span>另有 {{ preflightResult.warnings.length }} 项提示，不影响生成但建议关注</span>
-              </template>
-            </el-alert>
+        </div>
+        <div v-if="preflightResult?.warnings.length" class="mt-3 space-y-2" role="status">
+          <strong class="text-sm text-orange-700">预检提醒（{{ preflightResult.warnings.length }} 项）</strong>
+          <div v-for="(issue, idx) in preflightResult.warnings" :key="idx" class="p-3 bg-orange-50 border border-orange-200 rounded text-sm">
+            <div>{{ issue.description }}</div><div class="mt-1 text-gray-600">{{ issue.suggestion }}</div>
           </div>
+          <p class="section-tip">可继续生成草稿核对人员；预检通过不代表全部安排可行，最终以生成后的冲突校验为准。</p>
         </div>
       </div>
     </template>
@@ -262,7 +276,7 @@
         :disabled="!generationConfig?.enabled || !generationStudentCount || preflightStatus === 'failed'"
         @click="handleGenerate"
       >
-        确认生成草稿
+        {{ preflightStatus === 'passed' && preflightResult?.warnings.length ? '继续生成草稿' : '确认生成草稿' }}
       </el-button>
     </template>
   </el-dialog>
@@ -273,7 +287,28 @@
       <el-descriptions-item v-for="config in linkedConfigs" :key="config.defenseType" :label="config.defenseType">{{ config.startDate }} 至 {{ config.endDate }}；学生 {{ config.studentCount.target }} 人/组；专家{{ config.defenseType === '预答辩' ? '至少' : '目标' }} {{ config.defenseType === '预答辩' ? config.expertCount.min : config.expertCount.target }} 人<span v-if="config.defenseType !== '预答辩'">（至少 {{ config.expertCount.min }} 人）</span>，含主席/组长{{ config.defenseType === '预答辩' ? '，每位评审都须有本组学生' : '' }}</el-descriptions-item>
     </el-descriptions>
     <el-alert v-if="linkedError" class="mt-4" :title="linkedError" type="warning" :closable="false" show-icon />
-    <template #footer><el-button @click="linkedVisible = false">取消</el-button><el-button @click="linkedVisible = false; router.push(workflowLink('/rule-config'))">修改两阶段要求</el-button><el-button type="primary" :disabled="!linkedConfigs || !!linkedError" @click="handleGenerateLinked">确认联合生成</el-button></template>
+    <div v-if="linkedPreflightStatus === 'failed'" class="mt-4 space-y-3" role="alert">
+      <div class="font-medium text-red-700">资料或安排要求检查未通过，暂不能联合生成</div>
+      <template v-for="stage in [{ label: '预答辩', result: linkedPreflightPre }, { label: '正式答辩', result: linkedPreflightFormal }]" :key="stage.label">
+        <div v-if="stage.result?.errors.length" class="space-y-2">
+          <div class="font-medium">{{ stage.label }}</div>
+          <div v-for="(issue, idx) in stage.result.errors" :key="idx" class="p-3 bg-red-50 border border-red-200 rounded text-sm">
+            <div class="text-red-800">{{ issue.description }}</div>
+            <div class="mt-2 text-red-700">建议：{{ issue.suggestion }}</div>
+          </div>
+        </div>
+      </template>
+    </div>
+    <div v-if="linkedPreflightStatus !== 'idle' && linkedPreflightStatus !== 'loading'" class="mt-4 space-y-2" role="status">
+      <template v-for="stage in [{ label: '预答辩', result: linkedPreflightPre }, { label: '正式答辩', result: linkedPreflightFormal }]" :key="stage.label">
+        <div v-for="(issue, idx) in stage.result?.warnings || []" :key="`${stage.label}-${idx}`" class="p-3 bg-orange-50 border border-orange-200 rounded text-sm">
+          <strong>{{ stage.label }} · 预检提醒</strong>
+          <div class="mt-1">{{ issue.description }}</div><div class="mt-1 text-gray-600">{{ issue.suggestion }}</div>
+        </div>
+      </template>
+      <p v-if="linkedHasWarnings" class="section-tip">可继续生成草稿；预检通过不代表全部安排可行，最终以生成后的冲突校验为准。</p>
+    </div>
+    <template #footer><el-button @click="linkedVisible = false">取消</el-button><el-button @click="linkedVisible = false; router.push(workflowLink('/rule-config'))">修改两阶段要求</el-button><el-button type="primary" :loading="linkedPreflightLoading" :disabled="!linkedConfigs || !!linkedError || linkedPreflightStatus === 'failed'" @click="handleGenerateLinked">{{ linkedPreflightStatus === 'passed' && linkedHasWarnings ? '继续联合生成' : '确认联合生成' }}</el-button></template>
   </el-dialog>
 
   <el-dialog v-model="moveVisible" title="移动学生" width="520px" :close-on-click-modal="false">
@@ -492,6 +527,7 @@ import type { Classroom } from '../../types/classroom'
 import { useScheduleContext, type ScheduleContext } from '../../composables/useScheduleContext'
 import { getScheduleExperts } from '../../domain/scheduleExperts'
 import { buildScheduleRules } from '../../domain/scheduleRules'
+import { summarizeStudentCounts } from '../../domain/studentCountSummary'
 import { validateWizardRules } from '../../utils/wizardValidation'
 import { useAdminGuard } from '../../utils/adminGuard'
 
@@ -523,6 +559,8 @@ const loading = ref(false)
 const loadingMessage = ref('')
 const errorMsg = ref('')
 const result = ref<ScheduleResult | null>(null)
+const studentCountSummary = computed(() => summarizeStudentCounts(result.value?.groups ?? [], result.value?.rules))
+const linkedHasWarnings = computed(() => !!(linkedPreflightPre.value?.warnings.length || linkedPreflightFormal.value?.warnings.length))
 const { canManage, requireAdmin } = useAdminGuard()
 
 const selectedVersion = ref<number | undefined>()
@@ -931,8 +969,8 @@ const handleGenerateLinked = async () => {
       const preRules = buildScheduleRules('预答辩', configs[0])
       const formalRules = buildScheduleRules('正式答辩', configs[1])
       const [preResult, formalResult] = await Promise.all([
-        preflightSchedule(preRules as unknown as Record<string, unknown>),
-        preflightSchedule(formalRules as unknown as Record<string, unknown>)
+        preflightSchedule(preRules as unknown as Record<string, unknown>, { linkedGeneration: true }),
+        preflightSchedule(formalRules as unknown as Record<string, unknown>, { linkedGeneration: true })
       ])
       linkedPreflightPre.value = preResult
       linkedPreflightFormal.value = formalResult
@@ -940,10 +978,10 @@ const handleGenerateLinked = async () => {
       if (preResult.canGenerate && formalResult.canGenerate) {
         linkedPreflightStatus.value = 'passed'
         // 预检通过后，继续生成
-        await doGenerateLinked(configs)
+        if (!linkedHasWarnings.value) await doGenerateLinked(configs)
       } else {
         linkedPreflightStatus.value = 'failed'
-        ElMessage.warning('资料不齐全，请先补齐后再联合生成')
+        ElMessage.warning('资料或安排要求检查未通过，请查看具体原因后再联合生成')
       }
     } catch (error) {
       linkedPreflightStatus.value = 'idle'
@@ -992,10 +1030,10 @@ const handleGenerate = async () => {
       if (result.canGenerate) {
         preflightStatus.value = 'passed'
         // 预检通过后，继续生成
-        await doGenerate(config)
+        if (!result.warnings.length) await doGenerate(config)
       } else {
         preflightStatus.value = 'failed'
-        ElMessage.warning('资料不齐全，请先补齐后再生成')
+        ElMessage.warning('资料或安排要求检查未通过，请查看具体原因后再生成')
       }
     } catch (error) {
       preflightStatus.value = 'idle'
@@ -1121,7 +1159,10 @@ const goToFixData = (issueType: string) => {
   generationVisible.value = false
   linkedVisible.value = false
 
-  if (studentTypes.includes(issueType)) {
+  if (['external_mentor_capacity', 'inherited_group_size'].includes(issueType)) {
+    if (props.guided) emit('requirements')
+    else router.push(workflowLink('/rule-config'))
+  } else if (studentTypes.includes(issueType)) {
     router.push('/students')
   } else if (teacherTypes.includes(issueType)) {
     router.push('/teachers')
@@ -1407,6 +1448,35 @@ const meta = computed(() => {
 }
 
 /* 预检结果区域样式 */
+.student-count-summary {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+.student-count-heading, .student-count-buckets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  font-size: 13px;
+}
+.student-count-heading { color: #606266; }
+.student-count-heading strong { color: #303133; }
+.student-count-match { margin-left: auto; }
+.student-count-buckets { margin-top: 12px; gap: 8px; }
+.student-count-bucket {
+  padding: 7px 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 5px;
+  color: #606266;
+  background: #fafafa;
+}
+.student-count-bucket.is-target {
+  border-color: var(--el-color-primary-light-5);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
 .preflight-section {
   min-height: 40px;
 }

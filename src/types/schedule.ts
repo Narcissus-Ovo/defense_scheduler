@@ -67,7 +67,14 @@ export interface ScheduleResult {
   generatedAt: string
   groups: ScheduleGroup[]
   // [TASK-P12 新增] 历史版本导出按该版本规则快照处理备注。
-  rules?: { include_remarks?: boolean; includeRemarks?: boolean }
+  rules?: {
+    include_remarks?: boolean
+    includeRemarks?: boolean
+    group_size?: number
+    group_min?: number
+    group_max?: number
+    studentCount?: { target?: number; min?: number; max?: number }
+  }
   /** 后端生成排期时的冲突快照；旧后端/Mock 模式下不存在 */
   conflicts?: ScheduleConflict[]
   /** 随机种子（正式答辩专家随机补充时使用） */
