@@ -24,6 +24,9 @@ def match_formal_session(groups, students, teachers, rules, slot, busy=None, rng
     if not required <= available.keys():
         return None
     software_min = max(3, int(rules.get('formal_software_min', 3)))
+    reviewer_count = int(rules.get('expert_count', 5))
+    if not 3 <= software_min <= reviewer_count:
+        return None
     ordinary = {tid for tid, t in available.items() if is_software_teacher(t) and teacher_can_role(t, 'expert')}
     mentors = {s.supervisor_id for s in students} - {None}
     software = {tid for tid,t in available.items() if is_software_teacher(t)}
@@ -38,8 +41,8 @@ def match_formal_session(groups, students, teachers, rules, slot, busy=None, rng
         if len(required&chairs)>len(groups):return None
     qualified_secretaries = {tid for tid,t in available.items()
                             if secretary_is_qualified(t,rules.get('secretary_title','讲师'))}
-    if (len(required) > 5 * len(groups)
-            or len(required - software) > (5-software_min)*len(groups)
+    if (len(required) > reviewer_count * len(groups)
+            or len(required - software) > (reviewer_count-software_min)*len(groups)
             or len(ordinary & (required | (available.keys()-mentors))) < (software_min-1)*len(groups)):
         return None
     seats = []
@@ -51,7 +54,7 @@ def match_formal_session(groups, students, teachers, rules, slot, busy=None, rng
         bindings.append(next(iter(secretaries), None))
         seats.extend([(index, 'chair'), (index, 'secretary')]
                      + [(index, 'software')] * (software_min - 1)
-                     + [(index, 'expert')] * (5 - software_min))
+                     + [(index, 'expert')] * (reviewer_count - software_min))
     adjacency = {}
     for tid, teacher in available.items():
         choices = []

@@ -44,6 +44,7 @@ class ScheduleViewSet(ScheduleApplication, GenericViewSet):
         'secretary_unavailable': ('人员冲突', 'error'),
         'supervisor_avoidance': ('导师回避冲突', 'error'),
         'supervisor_missing': ('导师未与学生同组', 'error'),
+        'pre_reviewer_without_student': ('预答辩评审无本组学生', 'error'),
         'secretary_student_conflict': ('秘书学生冲突', 'error'),
         'secretary_is_supervisor': ('秘书学生冲突', 'error'),
         'secretary_continuity_broken': ('秘书连续性提示', 'warning'),

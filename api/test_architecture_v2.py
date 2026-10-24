@@ -20,7 +20,7 @@ class SchedulePolicyBoundaryTests(SimpleTestCase):
             {'chair_title': ''}, {'secretary_title': '助教'},
             {'course_half_day_blocking': False},
             {'defense_type': 'formal', 'formal_mentor_same_session': False},
-            {'defense_type': 'formal', 'expert_count': 6},
+            {'defense_type': 'formal', 'expert_count': 4, 'expert_min': 4},
             {'defense_type': 'mid', 'group_min': 1, 'group_size': 1, 'group_max': 99},
         ):
             with self.subTest(overrides=overrides), self.assertRaises(ValidationError):
@@ -55,8 +55,8 @@ class ArchitectureV2IntegrationTests(TestCase):
         self.teachers = [Teacher.objects.create(name=f'T{i:02}', title='教授', college='软件学院',
             roles=['主席', '组长', '普通专家', '秘书']) for i in range(1, 15)]
         self.students = []
-        for i in range(12):
-            mentor = self.teachers[0 if i < 6 else 1]
+        for i in range(10):
+            mentor = self.teachers[[0,0,1,1,2,3,4,5,6,7][i]]
             self.students.append(Student.objects.create(name=f'S{i:02}', student_no=f'V2{i}',
                 mentor=mentor, mentor_name=mentor.name, campus='创新港', defense_types=['预答辩', '正式答辩']))
         self.rooms = [Room.objects.create(name=f'R{i}', campus='创新港') for i in (1, 2)]
@@ -104,6 +104,33 @@ class ArchitectureV2IntegrationTests(TestCase):
         self.assertFalse(Student.objects.exclude(secretary_name='').exists())
         self.assertFalse(Student.objects.exclude(bound_secretary=None).exists())
         self.assertFalse(OperationLog.objects.filter(authoritative=True).exists())
+
+    def test_six_formal_reviewers_generate_publish_and_export_using_saved_count(self):
+        generated = self.client.post('/api/schedule/generate-linked/', {
+            'pre_rules': self.rules('pre'),
+            'formal_rules': {**self.rules('formal'), 'expert_count': 6, 'expert_min': 6},
+        }, format='json')
+        self.assertEqual(generated.status_code, 200, generated.data)
+        formal = generated.data['formal']
+        self.assertFalse([c for c in formal['conflicts'] if c['level'] == 'error'], formal['conflicts'])
+        self.assertTrue(all(len({g['chairId'], *(t['id'] for t in g['teachers'])}) == 6 for g in formal['groups']))
+        self.assertEqual(formal['rules']['expert_count'], 6)
+        published = self.client.post('/api/schedule/publish/', {
+            'version_id': formal['versionId'], 'expected_revision': 0}, format='json')
+        self.assertEqual(published.status_code, 200, published.data)
+        exported = self.client.get('/api/schedule/export/', {
+            'defense_type': 'formal', 'version_id': formal['versionId']})
+        self.assertEqual(exported.status_code, 200)
+        from openpyxl import load_workbook
+        workbook = load_workbook(BytesIO(exported.content), read_only=True)
+        for sheet in workbook:
+            if not sheet.title.startswith('组'):
+                continue
+            rows = list(sheet.values)
+            chair = next(row[1] for row in rows if row[0] == '主席/组长')
+            experts = next(row[1] for row in rows if row[0] == '专家')
+            self.assertEqual(len({chair, *experts.split('、')}), 6)
+        workbook.close()
 
     def test_generation_and_linked_generation_block_missing_mentor_data(self):
         self.students[0].mentor = None
@@ -594,3 +621,25 @@ class ArchitectureV2IntegrationTests(TestCase):
         response = self.client.post('/api/schedule/publish/', {'version_id': version.pk, 'expected_revision': 0}, format='json')
         self.assertEqual(response.status_code, 400, response.data)
         self.assertTrue(any(c['type'] == '角色资格冲突' and c['level'] == 'error' for c in response.data['conflicts']))
+
+    def test_unrelated_pre_reviewer_blocks_recheck_publish_and_every_export(self):
+        generated = self.client.post('/api/schedule/generate/', {'rules': self.rules('pre')}, format='json')
+        self.assertEqual(generated.status_code, 200, generated.data)
+        version = ScheduleVersion.objects.get(pk=generated.data['versionId'])
+        group = version.groups.first()
+        group.experts.add(self.teachers[-1])
+        query = {'defense_type': 'pre', 'version_id': version.pk}
+        rechecked = self.client.post('/api/schedule/check-conflicts/', query, format='json')
+        self.assertEqual(rechecked.status_code, 200, rechecked.data)
+        self.assertTrue(any(c['type'] == '预答辩评审无本组学生' and c['level'] == 'error'
+                            for c in rechecked.data))
+        responses = [
+            self.client.post('/api/schedule/publish/', {**query, 'expected_revision': 0}, format='json'),
+            self.client.get('/api/schedule/export/', query),
+            self.client.get('/api/schedule/export_word/', query),
+            self.client.post('/api/schedule/record-pdf-export/', query, format='json'),
+        ]
+        for response in responses:
+            self.assertEqual(response.status_code, 400, response.data)
+            self.assertTrue(any(c['type'] == '预答辩评审无本组学生' for c in response.data['conflicts']))
+        self.assertFalse(OperationLog.objects.filter(type__in=['发布', '导出'], authoritative=True).exists())

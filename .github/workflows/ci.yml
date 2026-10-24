@@ -9,6 +9,7 @@ on:
       - 'fix/**'
       - 'docs/**'
       - 'chore/**'
+      - 'codex/**'
   workflow_dispatch:
 
 permissions:

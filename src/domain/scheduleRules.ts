@@ -7,9 +7,10 @@ export function normalizeRuleConfig(config: RuleConfig): RuleConfig {
   const legacyWeights = config.policyVersion !== 2 && oldWeights.length > 0 && oldWeights.every(weight => weight >= 0 && weight <= 10)
   const softWeights = { ...policy.softWeights, ...config.softWeights }
   if (legacyWeights) for (const key of Object.keys(config.softWeights) as (keyof typeof softWeights)[]) softWeights[key] *= 10
-  const expertCount = config.defenseType === '正式答辩'
-    ? { target: 5, min: 5 }
-    : { target: Math.max(policy.expertCount.min, config.expertCount?.target || policy.expertCount.target), min: Math.max(policy.expertCount.min, config.expertCount?.min || policy.expertCount.min) }
+  const expertCount = {
+    target: Math.max(policy.expertCount.min, config.expertCount?.target || policy.expertCount.target),
+    min: Math.max(policy.expertCount.min, config.expertCount?.min || policy.expertCount.min)
+  }
   expertCount.target = Math.max(expertCount.target, expertCount.min)
   return {
     ...config,
@@ -18,7 +19,7 @@ export function normalizeRuleConfig(config: RuleConfig): RuleConfig {
     expertCount,
     secretaryCount: 1,
     courseHalfDayBlocking: config.courseHalfDayBlocking ?? true,
-    formalSoftwareMin: config.defenseType === '正式答辩' ? Math.max(3, Math.min(5, config.formalSoftwareMin ?? policy.softwareTeacherMin)) : 0,
+    formalSoftwareMin: config.defenseType === '正式答辩' ? Math.max(3, Math.min(expertCount.target, config.formalSoftwareMin ?? policy.softwareTeacherMin)) : 0,
     includeRemarks: config.includeRemarks ?? true,
     preservePreDefenseGroups: config.preservePreDefenseGroups ?? true,
     campusStartDates: { ...config.campusStartDates },

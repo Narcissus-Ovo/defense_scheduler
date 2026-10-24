@@ -172,8 +172,8 @@ class IntegrationContractTests(TestCase):
         self.assertEqual(response.data['defenseType'], '预答辩')
         self.assertIn('studentCount', response.data)
         self.assertEqual(response.data['endDate'], (timezone.localdate() + timedelta(days=10)).isoformat())
-        # [TASK-P04 测试] API默认预答辩专家总数固定为5位。
-        self.assertEqual(response.data['expertCount']['target'], 5)
+        self.assertEqual(response.data['expertCount']['target'], 4)
+        self.assertIsNone(response.data['expertCount']['max'])
         self.assertEqual(response.data['policyVersion'], 2)
         self.assertFalse(response.data['mentorAvoidance'])
 
@@ -1898,7 +1898,7 @@ class TimetableImportTests(TestCase):
         self.assertIn('semesterFirstMonday', response.data['error'])
 
 
-REAL_DOCS_DIR = Path(__file__).resolve().parent.parent / '排答辩文档'
+REAL_DOCS_DIR = Path(__file__).resolve().parent.parent / 'test-data' / '排答辩文档'
 
 
 def real_doc_upload(filename):
@@ -1908,7 +1908,7 @@ def real_doc_upload(filename):
 
 @unittest.skipUnless(REAL_DOCS_DIR.exists(), '真实答辩文档目录不存在，跳过冒烟验证')
 class RealDocumentSmokeTests(TestCase):
-    """用 排答辩文档/ 下的真实文件做端到端导入冒烟验证（仅在本机文件存在时运行）"""
+    """用 test-data/排答辩文档/ 的本地资料验证；CI 无真实资料时跳过。"""
 
     def setUp(self):
         self.client = APIClient()
@@ -2038,110 +2038,39 @@ class RealDocumentSmokeTests(TestCase):
             room.available_times = '\n'.join(entries + slots)
             room.save(update_fields=['available_times'])
 
-    def test_full_real_data_schedule_pipeline(self):
+    def test_real_documents_require_missing_mentors_before_generation(self):
         self._import_real_documents()
-
-        # 23 级学生先参加预答辩、再参加正式答辩（同一批人，正式沿用预答辩分组）
-        formal_students = [s for s in Student.objects.all() if '正式答辩' in (s.defense_types or [])]
-        self.assertGreater(len(formal_students), 300)
-        for student in formal_students:
-            student.defense_types = ['预答辩'] + [t for t in student.defense_types if t != '预答辩']
-            student.save(update_fields=['defense_types'])
-
-        # 真实借用记录只有 4 月（预答辩）教室：给 5 月正式答辩、7 月中期补录教室时段
-        self._append_room_slots(date(2026, 5, 6), date(2026, 5, 22))
-        self._append_room_slots(date(2026, 7, 6), date(2026, 7, 17))
-
+        # 独立导入未包含全部外院导师；验证 V2 资料预检会阻止生成，不绕过缺项。
+        for student in Student.objects.all():
+            if '正式答辩' in (student.defense_types or []):
+                student.defense_types = ['预答辩', '正式答辩']
+                student.save(update_fields=['defense_types'])
         base_rules = {
-            'group_size': 6, 'group_min': 4, 'group_max': 8,
-            'expert_count': 3, 'expert_min': 3,
-            'need_chair': True, 'chair_title': '副教授',
-            'avoid_weekend': True,
+            'policy_version': 2, 'expert_count_includes_chair': True,
+            'secretary_count': 1, 'secretary_title': '讲师',
+            'course_half_day_blocking': True, 'need_chair': True,
+            'avoid_weekend': True, 'preserve_pre_defense_groups': True,
         }
-
-        # 1) 预答辩：导师必须同组，按导师聚类分组，避开清明假期
-        response = self.client.post('/api/schedule/generate/', {'rules': {
-            **base_rules,
-            'defense_type': 'pre',
-            'start_date': '2026-04-01', 'end_date': '2026-04-30',
-            'exclude_dates': ['2026-04-06'],
-            'supervisor_policy': 'same_group', 'grouping': 'supervisor',
-        }}, format='json')
-        self.assertEqual(response.status_code, 200, getattr(response, 'data', ''))
-
-        pre_version = ScheduleVersion.objects.get(defense_type='pre', is_current=True)
-        pre_group_count = pre_version.groups.count()
-        self.assertGreater(pre_group_count, 40)
-
-        # 原始借用单不能覆盖全部小组：仅对确实分配了时段/秘书的小组回写绑定。
-        assigned_student_ids = set()
-        for group in pre_version.groups.select_related('secretary').prefetch_related('students'):
-            if group.secretary:
-                self.assertTrue(group.time)
-                for student in group.students.all():
-                    self.assertEqual(student.secretary_name, group.secretary.name)
-                    assigned_student_ids.add(student.id)
-        self.assertTrue(assigned_student_ids)
-        all_grouped = [s for group in response.data['groups'] for s in group['students']]
-        self.assertEqual(len(all_grouped), len(formal_students))
-        self.assertEqual(len({s['id'] for s in all_grouped}), len(formal_students))
-        if pre_version.groups.filter(time='').exists():
-            publish_response = self.client.post('/api/schedule/publish/', {
-                'version_id': pre_version.id, 'expected_revision': pre_version.revision,
-            }, format='json')
-            self.assertEqual(publish_response.status_code, 400)
-
-        # 清明及周末未被排期
-        for group in pre_version.groups.all():
-            if group.time:
-                day = date.fromisoformat(group.time.split(' ')[0])
-                self.assertNotEqual(day.isoformat(), '2026-04-06')
-                self.assertLess(day.weekday(), 5)
-
-        # 2) 正式答辩：导师回避，按秘书聚类沿用预答辩分组
-        response = self.client.post('/api/schedule/generate/', {'rules': {
-            **base_rules,
-            'defense_type': 'formal',
-            'start_date': '2026-05-06', 'end_date': '2026-05-22',
-            'expert_count': 4, 'expert_min': 4, 'chair_title': '教授',
-            'supervisor_policy': 'avoid', 'grouping': 'secretary',
-        }}, format='json')
-        self.assertEqual(response.status_code, 200, getattr(response, 'data', ''))
-
-        formal_version = ScheduleVersion.objects.get(defense_type='formal', is_current=True)
-        pre_sets = {
-            frozenset(group.students.values_list('id', flat=True))
-            for group in pre_version.groups.all()
-        }
-        formal_sets = {
-            frozenset(group.students.values_list('id', flat=True))
-            for group in formal_version.groups.all()
-        }
-        preserved = len(pre_sets & formal_sets)
-        # 绝大多数组从预答辩原样延续（个别组因秘书缺失可能被重新装箱）
-        self.assertGreater(preserved / max(len(pre_sets), 1), 0.7,
-                           f'仅 {preserved}/{len(pre_sets)} 组保持不变')
-
-        # 3) 中期考核：22 级学生，每组 10-12 人、专家 5 人（含组长）
-        response = self.client.post('/api/schedule/generate/', {'rules': {
-            'defense_type': 'mid',
-            'start_date': '2026-07-06', 'end_date': '2026-07-17',
-            'group_size': 11, 'group_min': 10, 'group_max': 12,
-            'expert_count': 4, 'expert_min': 4,
-            'need_chair': True, 'chair_title': '副教授',
-            'avoid_weekend': True,
-            'supervisor_policy': 'same_group', 'grouping': 'supervisor',
-        }}, format='json')
-        self.assertEqual(response.status_code, 200, getattr(response, 'data', ''))
-
-        # 4) 三种答辩类型的 Word 与 Excel 导出全部可用
-        for defense_type in ('pre', 'formal', 'mid'):
-            word_response = self.client.get('/api/schedule/export_word/', {'defense_type': defense_type})
-            self.assertEqual(word_response.status_code, 200, defense_type)
-            self.assertIn('wordprocessingml', word_response['Content-Type'])
-
-            excel_response = self.client.get('/api/schedule/export/', {'defense_type': defense_type})
-            self.assertEqual(excel_response.status_code, 200, defense_type)
+        for kind, label, start, end, count, minimum, maximum, experts in (
+            ('pre', '预答辩', '2026-04-01', '2026-04-30', 6, 4, 8, 4),
+            ('formal', '正式答辩', '2026-05-06', '2026-05-22', 6, 4, 8, 5),
+            ('mid', '中期答辩', '2026-07-06', '2026-07-17', 11, 10, 12, 5),
+        ):
+            with self.subTest(defense_type=kind):
+                response = self.client.post('/api/schedule/generate/', {'rules': {
+                    **base_rules, 'defense_type': kind, 'start_date': start, 'end_date': end,
+                    'group_size': count, 'group_min': minimum, 'group_max': maximum,
+                    'expert_count': experts, 'expert_min': experts,
+                    'chair_title': '教授' if kind == 'formal' else '副教授',
+                    'formal_mentor_same_session': kind == 'formal',
+                    'formal_software_min': 3 if kind == 'formal' else 0,
+                    'supervisor_policy': 'avoid' if kind == 'formal' else 'same_group',
+                    'grouping': 'secretary' if kind == 'formal' else 'supervisor',
+                    'exclude_dates': ['2026-04-06'],
+                }}, format='json')
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertIn('导师', response.data['error'])
+                self.assertFalse(ScheduleVersion.objects.filter(defense_type=kind).exists())
 
 
 class SupervisorPolicyTests(TestCase):

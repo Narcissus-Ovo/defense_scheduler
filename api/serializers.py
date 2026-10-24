@@ -104,17 +104,17 @@ def validate_rule_config(config):
     defense_type = DEFENSE_TYPE_VALUES.get(config.get('defenseType'), config.get('defenseType'))
     if defense_type not in DEFENSE_TYPE_LABELS:
         raise serializers.ValidationError({'defenseType': ['不支持的答辩类型']})
+    if defense_type == 'mid' and not (10 <= int(config['studentCount']['min'])
+            <= int(config['studentCount']['target']) <= int(config['studentCount']['max']) <= 12):
+        raise serializers.ValidationError({'studentCount': ['中期答辩每组学生人数必须在 10 到 12 人之间']})
     experts = config['expertCount']
     target = parse_non_negative_int(experts['target'], 'expertCount.target')
     minimum = parse_non_negative_int(experts['min'], 'expertCount.min')
-    # [TASK-P04 修改] 三类答辩至少5位；预答辩和正式答辩均固定5位。
-    floor = 5
+    floor = 4 if defense_type == 'pre' else 5
     if minimum < floor:
         raise serializers.ValidationError({'expertCount': [f'专家人数含主席/组长，至少需要 {floor} 人']})
-    if defense_type == 'pre' and (minimum != 5 or target != 5 or experts.get('max') not in (None, 5)):
-        raise serializers.ValidationError({'expertCount': ['预答辩必须固定 5 位专家（4 位普通专家和 1 位组长）']})
-    if defense_type == 'formal' and (minimum != 5 or target != 5 or experts.get('max') not in (None, 5)):
-        raise serializers.ValidationError({'expertCount': ['正式答辩专家人数必须固定为 5 人（含主席）']})
+    if defense_type == 'pre' and experts.get('max') is not None:
+        raise serializers.ValidationError({'expertCount': ['预答辩由本组学生的全部导师评审，不设置固定专家人数上限']})
     if experts.get('max') is not None and target > parse_non_negative_int(experts['max'], 'expertCount.max'):
         raise serializers.ValidationError({'expertCount': ['目标值不能大于最大值']})
     if config.get('expertCountIncludesChair') is not True:
@@ -127,8 +127,8 @@ def validate_rule_config(config):
         raise serializers.ValidationError({'courseHalfDayBlocking': ['有课的半天不能安排答辩']})
     if parse_non_negative_int(config.get('secretaryCount'), 'secretaryCount') != 1:
         raise serializers.ValidationError({'secretaryCount': ['每组必须配备 1 名秘书']})
-    if defense_type == 'formal' and not 3 <= parse_non_negative_int(config.get('formalSoftwareMin'), 'formalSoftwareMin') <= 5:
-        raise serializers.ValidationError({'formalSoftwareMin': ['正式答辩软件学院导师人数必须在 3 到 5 人之间']})
+    if defense_type == 'formal' and not 3 <= parse_non_negative_int(config.get('formalSoftwareMin'), 'formalSoftwareMin') <= target:
+        raise serializers.ValidationError({'formalSoftwareMin': ['软件学院导师人数至少为 3 人，不能超过专家目标人数']})
     for key in ('enabled', 'avoidWeekend', 'avoidHoliday', 'mentorAvoidance', 'expertCountIncludesChair',
                 'courseHalfDayBlocking', 'includeRemarks', 'preservePreDefenseGroups', 'formalMentorSameSession'):
         if not isinstance(config.get(key), bool):
@@ -365,6 +365,10 @@ class RuleConfigSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.defense_type == defense_type:
             config = merge_rule_config(config, self.instance.config)
         config = merge_rule_config(config, payload)
+        if (defense_type == 'formal' and isinstance(payload.get('expertCount'), dict)
+                and 'target' in payload['expertCount'] and 'max' not in payload['expertCount']):
+            # An explicit count edit releases the old fixed-five upper bound.
+            config['expertCount']['max'] = None
         config['defenseType'] = DEFENSE_TYPE_LABELS.get(defense_type, config.get('defenseType', defense_type))
         config.pop('updatedAt', None)
         config['policyVersion'] = 2

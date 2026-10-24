@@ -187,8 +187,16 @@ def committee_member_target(rules: Mapping[str, Any]) -> int:
     """
     expert = rules.get("expertCount") or {}
     target = _number(_value(rules, "expert_count", default=expert.get("target", 0)))
+    if pre_mentor_committee(rules):
+        target = max(4, _number(_value(rules, 'expert_min', default=expert.get('min', 4))))
     need_chair = _boolean(_value(rules, "need_chair", "needChair", default=False))
     return max(0, target - int(_includes_chair(rules) and need_chair))
+
+
+def pre_mentor_committee(rules: Mapping[str, Any]) -> bool:
+    """Current pre-defense contract, with an explicit legacy boundary."""
+    defense = _DEFENSE_TYPES.get(str(_value(rules, 'defense_type', 'defenseType', default='')))
+    return defense == 'pre' and (_includes_chair(rules) or rules.get('policy_version', 1) >= 2)
 
 
 def _normal_id(value: Any) -> Any:
@@ -261,8 +269,7 @@ def committee_violations(draft: Any, teachers: Any, rules: Mapping[str, Any]) ->
         if not qualified:
             report("role_qualification", f"教师 {name} 不具备担任{role_labels[role]}的角色或职称资格", [tid], role=role)
 
-    # A legacy rule has no new scenario headcount constraint. V2 always enforces
-    # the documented minimum/fixed count, even when its configured target differs.
+    # V2 keeps scenario floors and validates the saved minimum/target.
     if included:
         committee = experts | ({chair} if chair is not None else set())
         configured_expert = rules.get("expertCount") or {}
@@ -272,6 +279,8 @@ def committee_violations(draft: Any, teachers: Any, rules: Mapping[str, Any]) ->
             policy.get("expertCount", {}).get("max"),
             _value(rules, "expert_max", default=configured_expert.get("max")),
         ) if value is not None]
+        if defense == 'formal':
+            maxima.append(_value(rules, 'expert_count', default=configured_expert.get('target', policy['expertCount']['target'])))
         maximum = min(map(int, maxima)) if maxima else None
         if len(committee) < minimum or (maximum is not None and len(committee) > maximum):
             limit = f"恰好 {minimum} 人" if minimum == maximum else f"至少 {minimum} 人"
